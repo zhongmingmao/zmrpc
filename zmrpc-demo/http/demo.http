@@ -1,0 +1,31 @@
+### findById
+POST http://localhost:8790/
+Content-Type: application/json
+
+{
+  "service": "io.zhongmingmao.zmrpc.demo.api.UserService",
+  "method": "findById",
+  "args": [
+    1024
+  ]
+}
+
+### hashCode
+POST http://localhost:8790/
+Content-Type: application/json
+
+{
+  "service": "io.zhongmingmao.zmrpc.demo.api.UserService",
+  "method": "hashCode",
+  "args": []
+}
+
+### toString
+POST http://localhost:8790/
+Content-Type: application/json
+
+{
+  "service": "io.zhongmingmao.zmrpc.demo.api.UserService",
+  "method": "toString",
+  "args": []
+}
