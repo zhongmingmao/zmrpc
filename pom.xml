@@ -12,10 +12,9 @@
     <groupId>io.zhongmingmao</groupId>
     <artifactId>zmrpc</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <packaging>pom</packaging>
-
     <name>${artifactId}</name>
     <description>${artifactId}</description>
+    <packaging>pom</packaging>
 
     <properties>
         <java.version>17</java.version>

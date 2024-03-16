@@ -1,14 +1,15 @@
-package io.zhongmingmao.zmrpc.core.api;
+package io.zhongmingmao.zmrpc.core.api.request;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Data
 @Builder
+@NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class RpcRequest {
   String service;
   String method;
-  Object[] args;
+  RpcRequestArg[] args;
 }

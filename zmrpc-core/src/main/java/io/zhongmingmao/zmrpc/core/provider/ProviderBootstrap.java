@@ -1,10 +1,14 @@
 package io.zhongmingmao.zmrpc.core.provider;
 
+import static io.zhongmingmao.zmrpc.core.util.RpcUtil.buildArgs;
+import static io.zhongmingmao.zmrpc.core.util.RpcUtil.buildTypes;
+
+import com.google.common.collect.Maps;
 import io.zhongmingmao.zmrpc.core.annotatation.ZmProvider;
-import io.zhongmingmao.zmrpc.core.api.RpcRequest;
-import io.zhongmingmao.zmrpc.core.api.RpcResponse;
+import io.zhongmingmao.zmrpc.core.api.request.RpcRequest;
+import io.zhongmingmao.zmrpc.core.api.response.RpcResponse;
+import io.zhongmingmao.zmrpc.core.constant.RpcConstant;
 import jakarta.annotation.PostConstruct;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 import lombok.AccessLevel;
@@ -19,40 +23,48 @@ import org.springframework.context.ApplicationContextAware;
 public class ProviderBootstrap implements ApplicationContextAware {
 
   @Setter ApplicationContext applicationContext;
-  final Map<String, Object> skeleton = new HashMap<>();
+  final Map<String, Object> skeleton = Maps.newHashMap();
 
   @PostConstruct
   public void init() {
-    Map<String, Object> providers = applicationContext.getBeansWithAnnotation(ZmProvider.class);
-    providers
+    // beans have not been fully initialized
+    applicationContext
+        .getBeansWithAnnotation(ZmProvider.class)
         .values()
         .forEach(
             provider ->
+                // register the first interface of the provider
                 Arrays.stream(provider.getClass().getInterfaces())
                     .findFirst()
-                    .ifPresent(i -> this.skeleton.put(i.getCanonicalName(), provider)));
+                    .ifPresent(
+                        i -> {
+                          skeleton.put(i.getCanonicalName(), provider);
+                          log.info(
+                              "register provider to skeleton, interface: {}, provider: {}",
+                              i.getCanonicalName(),
+                              provider.getClass().getCanonicalName());
+                        }));
   }
 
-  public RpcResponse invoke(final RpcRequest request) {
+  public RpcResponse<?> invoke(final RpcRequest request) {
+    String methodName = request.getMethod();
+    if (RpcConstant.PROHIBITED_METHODS.contains(methodName)) {
+      return RpcResponse.builder().success(false).error(methodName + " is prohibited").build();
+    }
+
     try {
-      Object bean = skeleton.get(request.getService());
-      Optional<Method> method = findMethod(bean.getClass(), request.getMethod());
-      if (method.isEmpty()) {
-        return RpcResponse.builder().success(false).data("method not found").build();
-      }
+      Object provider = skeleton.get(request.getService());
+      Method method = provider.getClass().getMethod(methodName, buildTypes(request.getArgs()));
       return RpcResponse.builder()
           .success(true)
-          .data(method.get().invoke(bean, request.getArgs()))
+          .data(method.invoke(provider, buildArgs(request.getArgs())))
           .build();
-    } catch (InvocationTargetException | IllegalAccessException e) {
+    } catch (Exception e) {
       log.error("invoke fail, request: " + request, e);
-      return RpcResponse.builder().success(false).data(e.getMessage()).build();
+      return RpcResponse.builder()
+          .success(false)
+          .error("provider invoke fail, " + e.getMessage())
+          .build();
     }
-  }
-
-  private Optional<Method> findMethod(final Class<?> klass, final String method) {
-    return Arrays.stream(klass.getMethods())
-        .filter(m -> Objects.equals(m.getName(), method))
-        .findFirst();
   }
 }

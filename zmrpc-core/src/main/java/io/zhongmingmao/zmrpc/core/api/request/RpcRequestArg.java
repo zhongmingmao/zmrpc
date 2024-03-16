@@ -1,4 +1,4 @@
-package io.zhongmingmao.zmrpc.demo.api;
+package io.zhongmingmao.zmrpc.core.api.request;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -8,7 +8,7 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class User {
-  Long id;
-  String name;
+public class RpcRequestArg {
+  String type;
+  Object value;
 }

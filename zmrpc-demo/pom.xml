@@ -15,12 +15,21 @@
     <packaging>pom</packaging>
 
     <properties>
-        <demo.version>${version}</demo.version>
+        <app.version>${version}</app.version>
     </properties>
 
     <modules>
         <module>zmrpc-demo-api</module>
         <module>zmrpc-demo-provider</module>
+        <module>zmrpc-demo-consumer</module>
     </modules>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
 
 </project>

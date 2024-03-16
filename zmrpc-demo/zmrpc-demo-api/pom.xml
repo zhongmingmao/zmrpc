@@ -13,12 +13,4 @@
     <name>${artifactId}</name>
     <description>${artifactId}</description>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
-        </dependency>
-    </dependencies>
-
 </project>

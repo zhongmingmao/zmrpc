@@ -9,7 +9,7 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>zmrpc-demo-provider</artifactId>
+    <artifactId>zmrpc-demo-consumer</artifactId>
     <name>${artifactId}</name>
     <description>${artifactId}</description>
 
