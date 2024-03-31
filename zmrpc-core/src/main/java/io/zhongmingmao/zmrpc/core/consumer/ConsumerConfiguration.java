@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 
 @Configuration
-public class ConsumerConfig {
+public class ConsumerConfiguration {
 
   @Bean
   public ConsumerBootstrap consumerBootstrap() {
@@ -15,8 +15,7 @@ public class ConsumerConfig {
 
   @Bean
   @Order(Integer.MIN_VALUE)
-  public ApplicationRunner buildConsumers(final ConsumerBootstrap bootstrap) {
-    // ApplicationRunner#run: all beans are fully initialized
-    return args -> bootstrap.buildConsumers();
+  public ApplicationRunner buildProxyConsumers(final ConsumerBootstrap bootstrap) {
+    return args -> bootstrap.buildProxyConsumers();
   }
 }

@@ -1,4 +1,4 @@
-package io.zhongmingmao.zmrpc.demo.api;
+package io.zhongmingmao.zmrpc.demo.api.user;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;

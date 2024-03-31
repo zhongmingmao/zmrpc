@@ -15,10 +15,8 @@ import okhttp3.*;
 @Slf4j
 public final class HttpUtil {
 
-  public static final String TOKEN = "Token";
-  public static final String AUTHORIZATION = "Authorization";
-  public static final RequestBody EMPTY_BODY = RequestBody.create(null, new byte[0]);
   public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+
   private static final TrustManager[] TRUST_ALL_CERTS =
       new TrustManager[] {
         new X509TrustManager() {

@@ -2,11 +2,10 @@ package io.zhongmingmao.zmrpc.core.util;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.util.Optional;
+import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -36,48 +35,66 @@ public final class JsonUtil {
     return toJson(object).orElse(emptyJson());
   }
 
-  public static String toJsonOrNull(final Object object) {
-    return toJson(object).orElse(null);
-  }
-
   public static <T> Optional<T> fromJson(final String json, final Class<T> klass) {
-    return fromJson(json, klass, false);
-  }
-
-  public static <T> Optional<T> fromJson(
-      final String json, final Class<T> klass, final boolean silent) {
     try {
       return Optional.ofNullable(MAPPER.readValue(decorate(json), klass));
-    } catch (IOException e) {
-      if (silent) {
-        log.debug("fromJson fail, json: " + json);
-      } else {
-        log.error("fromJson fail, json: " + json, e);
-      }
-      return Optional.empty();
-    }
-  }
-
-  public static <T> T fromJsonOrNull(final String json, final Class<T> klass) {
-    return fromJsonOrNull(json, klass, false);
-  }
-
-  public static <T> T fromJsonOrNull(
-      final String json, final Class<T> klass, final boolean silent) {
-    return fromJson(json, klass, silent).orElse(null);
-  }
-
-  public static <T> Optional<T> fromJson(final String json, final TypeReference<T> type) {
-    try {
-      return Optional.ofNullable(MAPPER.readValue(decorate(json), type));
     } catch (IOException e) {
       log.error("fromJson fail, json: " + json, e);
       return Optional.empty();
     }
   }
 
-  public static <T> T fromJsonOrNull(final String json, final TypeReference<T> type) {
-    return fromJson(json, type).orElse(null);
+  public static <T> Optional<T> fromJsonList(final String json, final Class<T> elementClass) {
+    return fromJsonCollection(json, List.class, elementClass);
+  }
+
+  public static <T> Optional<T> fromJsonSet(final String json, final Class<T> elementClass) {
+    return fromJsonCollection(json, Set.class, elementClass);
+  }
+
+  public static <T> Optional<T> fromJsonCollection(
+      final String json,
+      final Class<? extends Collection> collectionClass,
+      final Class<T> elementClass) {
+    try {
+      return Optional.ofNullable(
+          MAPPER.readValue(
+              decorate(json),
+              MAPPER.getTypeFactory().constructCollectionType(collectionClass, elementClass)));
+    } catch (IOException e) {
+      log.error("fromJsonCollection fail, json: " + json, e);
+      return Optional.empty();
+    }
+  }
+
+  public static <T> Optional<T> fromJsonMap(
+      final String json, final Class<T> keyClass, final Class<T> valueClass) {
+    try {
+      return Optional.ofNullable(
+          MAPPER.readValue(
+              decorate(json),
+              MAPPER.getTypeFactory().constructMapType(Map.class, keyClass, valueClass)));
+    } catch (IOException e) {
+      log.error("fromJsonMap fail, json: " + json, e);
+      return Optional.empty();
+    }
+  }
+
+  public static <T> T fromJsonOrNull(final String json, final Class<T> klass) {
+    return fromJson(json, klass).orElse(null);
+  }
+
+  public static <T> T fromJsonListOrNull(final String json, final Class<T> elementClass) {
+    return fromJsonList(json, elementClass).orElse(null);
+  }
+
+  public static <T> T fromJsonSetOrNull(final String json, final Class<T> elementClass) {
+    return fromJsonSet(json, elementClass).orElse(null);
+  }
+
+  public static <T> T fromJsonMapOrNull(
+      final String json, final Class<T> keyClass, final Class<T> valueClass) {
+    return fromJsonMap(json, keyClass, valueClass).orElse(null);
   }
 
   private static String decorate(final String json) {

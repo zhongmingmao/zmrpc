@@ -4,7 +4,9 @@ import com.google.common.collect.Lists;
 import io.zhongmingmao.zmrpc.core.annotatation.ZmConsumer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
@@ -21,36 +23,36 @@ public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAw
   @Setter ApplicationContext applicationContext;
   @Setter Environment environment;
 
-  public void buildConsumers() {
-    for (String name : applicationContext.getBeanDefinitionNames()) {
+  public void buildProxyConsumers() {
+    String[] names = applicationContext.getBeanDefinitionNames();
+    for (String name : names) {
       Object bean = applicationContext.getBean(name);
-      findAnnotatedFields(bean.getClass())
-          .forEach(
-              field -> {
-                try {
-                  Object consumer = buildProxyConsumer(field.getType());
-                  field.setAccessible(true);
-                  field.set(bean, consumer);
-                  log.info(
-                      "inject proxied consumer to {}#{}",
-                      field.getDeclaringClass().getCanonicalName(),
-                      field.getName());
-                } catch (IllegalAccessException e) {
-                  log.error("buildConsumers fail", e);
-                }
-              });
+      List<Field> fields = findConsumerFields(bean.getClass());
+      for (Field field : fields) {
+        try {
+          Object proxyConsumer = buildProxyConsumer(field.getType());
+          field.setAccessible(true);
+          field.set(bean, proxyConsumer);
+          log.info(
+              "buildProxyConsumer, {}#{}",
+              field.getDeclaringClass().getCanonicalName(),
+              field.getName());
+        } catch (IllegalAccessException e) {
+          log.error("buildProxyConsumer error", e);
+        }
+      }
     }
   }
 
-  private List<Field> findAnnotatedFields(Class<?> klass) {
-    // since klass is proxied, so getDeclaredFields() will return empty list
-    // get super classes to get fields
+  private List<Field> findConsumerFields(Class<?> klass) {
+    // klass maybe proxied
     List<Field> fields = Lists.newArrayList();
     while (Objects.nonNull(klass)) {
-      fields.addAll(
+      List<Field> consumerFields =
           Arrays.stream(klass.getDeclaredFields())
               .filter(field -> field.isAnnotationPresent(ZmConsumer.class))
-              .toList());
+              .toList();
+      fields.addAll(consumerFields);
       klass = klass.getSuperclass();
     }
     return fields;
