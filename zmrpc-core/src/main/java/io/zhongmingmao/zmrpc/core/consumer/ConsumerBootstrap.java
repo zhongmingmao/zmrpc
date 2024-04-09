@@ -2,6 +2,10 @@ package io.zhongmingmao.zmrpc.core.consumer;
 
 import com.google.common.collect.Lists;
 import io.zhongmingmao.zmrpc.core.annotatation.ZmConsumer;
+import io.zhongmingmao.zmrpc.core.api.context.RpcContext;
+import io.zhongmingmao.zmrpc.core.api.lb.loadbalancer.LoadBalancer;
+import io.zhongmingmao.zmrpc.core.api.lb.router.Router;
+import io.zhongmingmao.zmrpc.core.api.registry.Registry;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
@@ -13,15 +17,12 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.EnvironmentAware;
-import org.springframework.core.env.Environment;
 
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAware {
+public class ConsumerBootstrap implements ApplicationContextAware {
 
   @Setter ApplicationContext applicationContext;
-  @Setter Environment environment;
 
   public void buildProxyConsumers() {
     String[] names = applicationContext.getBeanDefinitionNames();
@@ -62,6 +63,19 @@ public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAw
     return Proxy.newProxyInstance(
         service.getClassLoader(),
         new Class[] {service},
-        ZmInvocationHandler.builder().environment(environment).service(service).build());
+        ZmInvocationHandler.<String>builder().context(buildRpcContext(service)).build());
+  }
+
+  private RpcContext<String> buildRpcContext(final Class<?> service) {
+    return RpcContext.<String>builder()
+        .service(service.getCanonicalName())
+        .providers(fetchProviders(service.getCanonicalName()))
+        .router(applicationContext.getBean(Router.class))
+        .loadBalancer(applicationContext.getBean(LoadBalancer.class))
+        .build();
+  }
+
+  private List<String> fetchProviders(final String service) {
+    return applicationContext.getBean(Registry.class).fetchInstances(service);
   }
 }

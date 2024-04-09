@@ -5,6 +5,7 @@ import static io.zhongmingmao.zmrpc.core.util.HttpUtil.JSON;
 import static io.zhongmingmao.zmrpc.core.util.JsonUtil.*;
 
 import com.google.common.base.Defaults;
+import io.zhongmingmao.zmrpc.core.api.context.RpcContext;
 import io.zhongmingmao.zmrpc.core.api.request.RpcRequest;
 import io.zhongmingmao.zmrpc.core.api.response.RpcResponse;
 import io.zhongmingmao.zmrpc.core.util.GenericUtil;
@@ -12,13 +13,11 @@ import io.zhongmingmao.zmrpc.core.util.HttpUtil;
 import io.zhongmingmao.zmrpc.core.util.MethodUtil;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.util.Objects;
 import java.util.Optional;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
-import org.springframework.core.env.Environment;
 
 @Slf4j
 @Data
@@ -29,8 +28,7 @@ public class ZmInvocationHandler implements InvocationHandler {
 
   OkHttpClient client = HttpUtil.buildClient();
 
-  Environment environment;
-  Class<?> service;
+  RpcContext<String> context;
 
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -43,7 +41,7 @@ public class ZmInvocationHandler implements InvocationHandler {
 
     RpcRequest request =
         RpcRequest.builder()
-            .service(service.getCanonicalName())
+            .service(context.getService())
             .method(methodName)
             .args(buildRequestArgs(method.getParameterTypes(), args))
             .build();
@@ -60,8 +58,12 @@ public class ZmInvocationHandler implements InvocationHandler {
 
   private Request buildHttpRequest(final RpcRequest request) {
     return new Request.Builder()
-        .url(Objects.requireNonNull(environment.getProperty("provider.address")))
+        .url(chooseProvider().orElseThrow(() -> new RuntimeException("find no providers")))
         .post(RequestBody.create(toJsonOrEmpty(request), JSON))
         .build();
+  }
+
+  private Optional<String> chooseProvider() {
+    return context.getLoadBalancer().choose(context.getRouter().route(context.getProviders()));
   }
 }

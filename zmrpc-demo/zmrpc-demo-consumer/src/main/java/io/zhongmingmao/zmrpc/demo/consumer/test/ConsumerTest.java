@@ -42,6 +42,7 @@ public class ConsumerTest {
       testGetMapUsers();
       testGetName();
       testReservedMethod();
+      testLoadBalancing();
     };
   }
 
@@ -149,5 +150,14 @@ public class ConsumerTest {
   private void testReservedMethod() {
     log.info("testToString, result: {}", userService.toString());
     log.info("testHashCode, result: {}", userService.hashCode());
+  }
+
+  private void testLoadBalancing() {
+    int count = 1 << 3;
+    log.info("testLoadBalancing start");
+    for (int i = 0; i < count; i++) {
+      log.info("==> testLoadBalancing , user: {}", userService.findUser());
+    }
+    log.info("testLoadBalancing end");
   }
 }

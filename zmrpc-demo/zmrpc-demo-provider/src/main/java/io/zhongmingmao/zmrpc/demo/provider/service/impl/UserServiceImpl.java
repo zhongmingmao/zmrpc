@@ -6,22 +6,36 @@ import com.google.common.collect.Sets;
 import io.zhongmingmao.zmrpc.core.annotatation.ZmProvider;
 import io.zhongmingmao.zmrpc.demo.api.user.User;
 import io.zhongmingmao.zmrpc.demo.api.user.UserService;
-import org.springframework.stereotype.Component;
-
 import java.util.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Component;
 
 @Component
 @ZmProvider
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@AllArgsConstructor
 public class UserServiceImpl implements UserService {
+
+  Environment environment;
+
+  private String identity() {
+    return environment.getProperty("server.port");
+  }
 
   @Override
   public User findUser() {
-    return User.builder().id(System.currentTimeMillis()).name("findUser()").build();
+    return User.builder().id(System.currentTimeMillis()).name("findUser()-" + identity()).build();
   }
 
   @Override
   public User findUser(long id, String name) {
-    return User.builder().id(id).name(name + " - findUser(long id, String name)").build();
+    return User.builder()
+        .id(id)
+        .name(name + " - findUser(long id, String name)-" + identity())
+        .build();
   }
 
   @Override
@@ -31,17 +45,17 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public User findUserByShort(short id) {
-    return User.builder().id((long) id).name("findUserByShort(short id)").build();
+    return User.builder().id((long) id).name("findUserByShort(short id)" + identity()).build();
   }
 
   @Override
   public User findUserByFloat(float id) {
-    return User.builder().id((long) id).name("findUserByFloat(float id)").build();
+    return User.builder().id((long) id).name("findUserByFloat(float id)" + identity()).build();
   }
 
   @Override
   public User findUserByPrimitiveLong(long id) {
-    return User.builder().id(id).name("findUserByPrimitiveLong(long id)").build();
+    return User.builder().id(id).name("findUserByPrimitiveLong(long id)" + identity()).build();
   }
 
   @Override
@@ -49,14 +63,14 @@ public class UserServiceImpl implements UserService {
     if (Objects.nonNull(id) && id < 0) {
       throw new IllegalArgumentException("id must be greater than 0");
     }
-    return User.builder().id(id).name("findUserByLong(Long id)").build();
+    return User.builder().id(id).name("findUserByLong(Long id)-" + identity()).build();
   }
 
   @Override
   public User findUserByName(String name) {
     return User.builder()
         .id(System.currentTimeMillis())
-        .name(name + " - findUserByName(String name)")
+        .name(name + " - findUserByName(String name)-" + identity())
         .build();
   }
 
@@ -77,7 +91,7 @@ public class UserServiceImpl implements UserService {
             user ->
                 User.builder()
                     .id(user.getId())
-                    .name(user.getName() + " - getUsers(User[] users)")
+                    .name(user.getName() + " - getUsers(User[] users)-" + identity())
                     .build())
         .toArray(User[]::new);
   }
@@ -90,7 +104,7 @@ public class UserServiceImpl implements UserService {
               user ->
                   User.builder()
                       .id(user.getId())
-                      .name(user.getName() + " - getUsers(List<User> users)")
+                      .name(user.getName() + " - getUsers(List<User> users)-" + identity())
                       .build())
           .toArray(User[]::new);
     }
@@ -105,7 +119,7 @@ public class UserServiceImpl implements UserService {
               user ->
                   User.builder()
                       .id(user.getId())
-                      .name(user.getName() + " - getUsers(Set<User> users)")
+                      .name(user.getName() + " - getUsers(Set<User> users)-" + identity())
                       .build())
           .toArray(User[]::new);
     }
@@ -120,7 +134,8 @@ public class UserServiceImpl implements UserService {
               entry ->
                   User.builder()
                       .id(Long.valueOf(entry.getKey()))
-                      .name(entry.getValue() + " - getUsers(Map<Integer, User> users)")
+                      .name(
+                          entry.getValue() + " - getUsers(Map<Integer, User> users)-" + identity())
                       .build())
           .toArray(User[]::new);
     }
@@ -130,13 +145,13 @@ public class UserServiceImpl implements UserService {
   @Override
   public List<User> getListUsers() {
     return Lists.newArrayList(
-        User.builder().id(System.currentTimeMillis()).name("getListUsers()").build());
+        User.builder().id(System.currentTimeMillis()).name("getListUsers()-" + identity()).build());
   }
 
   @Override
   public Set<User> getSetUsers() {
     return Sets.newHashSet(
-        User.builder().id(System.currentTimeMillis()).name("getSetUsers()").build());
+        User.builder().id(System.currentTimeMillis()).name("getSetUsers()-" + identity()).build());
   }
 
   @Override
@@ -144,12 +159,12 @@ public class UserServiceImpl implements UserService {
     Map<Long, User> users = Maps.newHashMap();
     users.put(
         System.currentTimeMillis(),
-        User.builder().id(System.currentTimeMillis()).name("getMapUsers()").build());
+        User.builder().id(System.currentTimeMillis()).name("getMapUsers()-" + identity()).build());
     return users;
   }
 
   @Override
   public String getName(Long id) {
-    return id + " - getName(Long id)";
+    return id + " - getName(Long id)-" + identity();
   }
 }
