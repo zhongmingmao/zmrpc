@@ -5,34 +5,47 @@ import static io.zhongmingmao.zmrpc.core.provider.ProviderUtil.buildRequestArgVa
 
 import com.google.common.collect.Maps;
 import io.zhongmingmao.zmrpc.core.annotatation.ZmProvider;
+import io.zhongmingmao.zmrpc.core.api.registry.Registry;
 import io.zhongmingmao.zmrpc.core.api.request.RpcRequest;
 import io.zhongmingmao.zmrpc.core.api.request.RpcRequestArg;
 import io.zhongmingmao.zmrpc.core.api.response.RpcResponse;
 import io.zhongmingmao.zmrpc.core.util.MethodUtil;
 import io.zhongmingmao.zmrpc.core.util.SignUtil;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.EnvironmentAware;
+import org.springframework.core.env.Environment;
 
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ProviderBootstrap implements ApplicationContextAware {
+public class ProviderBootstrap implements ApplicationContextAware, EnvironmentAware {
 
   @Setter ApplicationContext applicationContext;
+  @Setter Environment environment;
 
+  final Registry registry;
   final Map<String, Object> skeleton = Maps.newHashMap();
   final Map<String, ProviderInvocation> invocations = Maps.newHashMap();
 
+  public ProviderBootstrap(Registry registry) {
+    this.registry = registry;
+  }
+
   @PostConstruct
-  public void register() {
+  public void init() {
     Map<String, Object> beans = applicationContext.getBeansWithAnnotation(ZmProvider.class);
     beans.forEach(
         (name, provider) -> {
@@ -47,6 +60,36 @@ public class ProviderBootstrap implements ApplicationContextAware {
             skeleton.putIfAbsent(service, provider);
           }
         });
+  }
+
+  // ApplicationRunner -> Spring Context is ready -> register service to registry -> receive traffic
+  public void register() {
+    skeleton.keySet().forEach(this::register);
+  }
+
+  @PreDestroy
+  public void unregister() {
+    skeleton.keySet().forEach(this::unregister);
+  }
+
+  private void register(final String service) {
+    buildInstance().ifPresent(instance -> registry.register(service, instance));
+  }
+
+  private void unregister(final String service) {
+    buildInstance().ifPresent(instance -> registry.unregister(service, instance));
+  }
+
+  private Optional<String> buildInstance() {
+    try {
+      String address = InetAddress.getLocalHost().getHostAddress();
+      String port = environment.getProperty("server.port");
+      String instance = String.join("_", address, port);
+      return Optional.of(instance);
+    } catch (UnknownHostException e) {
+      log.error("buildInstance fail", e);
+      return Optional.empty();
+    }
   }
 
   public RpcResponse<?> invoke(final RpcRequest request) {

@@ -11,6 +11,7 @@ import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
@@ -23,6 +24,12 @@ import org.springframework.context.ApplicationContextAware;
 public class ConsumerBootstrap implements ApplicationContextAware {
 
   @Setter ApplicationContext applicationContext;
+
+  final Registry registry;
+
+  public ConsumerBootstrap(Registry registry) {
+    this.registry = registry;
+  }
 
   public void buildProxyConsumers() {
     String[] names = applicationContext.getBeanDefinitionNames();
@@ -60,10 +67,10 @@ public class ConsumerBootstrap implements ApplicationContextAware {
   }
 
   private Object buildProxyConsumer(final Class<?> service) {
-    return Proxy.newProxyInstance(
-        service.getClassLoader(),
-        new Class[] {service},
-        ZmInvocationHandler.<String>builder().context(buildRpcContext(service)).build());
+    ZmInvocationHandler handler =
+        ZmInvocationHandler.builder().context(buildRpcContext(service)).build();
+    registry.subscribe(service.getCanonicalName(), handler::refreshContext);
+    return Proxy.newProxyInstance(service.getClassLoader(), new Class[] {service}, handler);
   }
 
   private RpcContext<String> buildRpcContext(final Class<?> service) {
@@ -76,6 +83,7 @@ public class ConsumerBootstrap implements ApplicationContextAware {
   }
 
   private List<String> fetchProviders(final String service) {
-    return applicationContext.getBean(Registry.class).fetchInstances(service);
+    List<String> instances = registry.fetchInstances(service);
+    return instances.stream().map(ConsumerUtil::buildProvider).collect(Collectors.toList());
   }
 }

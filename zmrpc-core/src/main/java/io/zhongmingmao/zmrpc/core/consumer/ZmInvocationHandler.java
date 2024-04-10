@@ -6,6 +6,7 @@ import static io.zhongmingmao.zmrpc.core.util.JsonUtil.*;
 
 import com.google.common.base.Defaults;
 import io.zhongmingmao.zmrpc.core.api.context.RpcContext;
+import io.zhongmingmao.zmrpc.core.api.registry.event.RegistryChangedEvent;
 import io.zhongmingmao.zmrpc.core.api.request.RpcRequest;
 import io.zhongmingmao.zmrpc.core.api.response.RpcResponse;
 import io.zhongmingmao.zmrpc.core.util.GenericUtil;
@@ -13,7 +14,9 @@ import io.zhongmingmao.zmrpc.core.util.HttpUtil;
 import io.zhongmingmao.zmrpc.core.util.MethodUtil;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
@@ -54,6 +57,20 @@ public class ZmInvocationHandler implements InvocationHandler {
     }
 
     return Defaults.defaultValue(returnType);
+  }
+
+  public void refreshContext(final RegistryChangedEvent event) {
+    if (!Objects.equals(event.getService(), context.getService())) {
+      log.warn(
+          "refreshContext fail, service mismatch, event-service: {}, context-service: {}",
+          event.getService(),
+          context.getService());
+      return;
+    }
+    context.setProviders(
+        event.getInstances().stream()
+            .map(ConsumerUtil::buildProvider)
+            .collect(Collectors.toList()));
   }
 
   private Request buildHttpRequest(final RpcRequest request) {

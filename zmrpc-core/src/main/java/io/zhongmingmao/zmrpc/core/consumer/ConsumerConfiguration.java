@@ -1,24 +1,27 @@
 package io.zhongmingmao.zmrpc.core.consumer;
 
-import com.google.common.base.Splitter;
-import com.google.common.collect.Lists;
 import io.zhongmingmao.zmrpc.core.api.lb.loadbalancer.LoadBalancer;
 import io.zhongmingmao.zmrpc.core.api.lb.loadbalancer.RoundRobinLoadBalancer;
 import io.zhongmingmao.zmrpc.core.api.lb.router.Router;
 import io.zhongmingmao.zmrpc.core.api.registry.Registry;
-import io.zhongmingmao.zmrpc.core.api.registry.StaticRegistry;
-import org.springframework.beans.factory.annotation.Value;
+import io.zhongmingmao.zmrpc.core.api.registry.ZookeeperRegistry;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
 
 @Configuration
 public class ConsumerConfiguration {
 
+  @Bean(initMethod = "start", destroyMethod = "stop")
+  public Registry registry(final Environment environment) {
+    return new ZookeeperRegistry(environment);
+  }
+
   @Bean
-  public ConsumerBootstrap consumerBootstrap() {
-    return new ConsumerBootstrap();
+  public ConsumerBootstrap consumerBootstrap(final Registry registry) {
+    return new ConsumerBootstrap(registry);
   }
 
   @Bean
@@ -35,15 +38,5 @@ public class ConsumerConfiguration {
   @Bean
   public LoadBalancer<?> loadBalancer() {
     return new RoundRobinLoadBalancer<>();
-  }
-
-  @Value("${static.registry.providers}")
-  String staticProviders;
-
-  @Bean(initMethod = "start", destroyMethod = "stop")
-  public Registry registry() {
-    return new StaticRegistry(
-        Lists.newArrayList(
-            Splitter.on(",").omitEmptyStrings().trimResults().split(staticProviders)));
   }
 }

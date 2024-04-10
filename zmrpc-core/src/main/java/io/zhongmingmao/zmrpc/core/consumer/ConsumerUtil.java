@@ -1,6 +1,9 @@
 package io.zhongmingmao.zmrpc.core.consumer;
 
+import com.google.common.base.Splitter;
 import io.zhongmingmao.zmrpc.core.api.request.RpcRequestArg;
+
+import java.util.List;
 import java.util.Objects;
 
 public final class ConsumerUtil {
@@ -18,5 +21,12 @@ public final class ConsumerUtil {
           RpcRequestArg.builder().type(types[i].getCanonicalName()).value(args[i]).build();
     }
     return requestArgs;
+  }
+
+  public static String buildProvider(final String instance) {
+    List<String> items = Splitter.on("_").trimResults().omitEmptyStrings().splitToList(instance);
+    return items.size() < 2
+        ? null
+        : "http://%s:%s/rpc/invoke".formatted(items.get(0), items.get(1));
   }
 }

@@ -1,6 +1,2 @@
 server:
   port: 9000
-
-static:
-  registry:
-    providers: http://localhost:8001/rpc/invoke,http://localhost:8002/rpc/invoke
