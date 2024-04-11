@@ -21,6 +21,11 @@ public class ProviderConfiguration {
   }
 
   @Bean
+  public ProviderInvoker providerInvoker(final ProviderBootstrap bootstrap) {
+    return new ProviderInvoker(bootstrap);
+  }
+
+  @Bean
   public ApplicationRunner register(final ProviderBootstrap providerBootstrap) {
     return args -> providerBootstrap.register();
   }

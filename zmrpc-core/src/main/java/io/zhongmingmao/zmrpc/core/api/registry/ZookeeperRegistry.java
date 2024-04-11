@@ -1,9 +1,13 @@
 package io.zhongmingmao.zmrpc.core.api.registry;
 
+import com.google.common.collect.Maps;
 import io.zhongmingmao.zmrpc.core.api.registry.event.RegistryChangedEvent;
 import io.zhongmingmao.zmrpc.core.api.registry.event.RegistryChangedListener;
+import io.zhongmingmao.zmrpc.core.api.registry.meta.Instance;
+import io.zhongmingmao.zmrpc.core.api.registry.meta.Service;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +30,8 @@ public class ZookeeperRegistry implements Registry {
 
   final Environment environment;
   CuratorFramework client;
+
+  Map<String, TreeCache> caches = Maps.newConcurrentMap();
 
   @Override
   public void start() {
@@ -53,57 +59,71 @@ public class ZookeeperRegistry implements Registry {
   @Override
   public void stop() {
     try {
+      caches.forEach(
+          (service, cache) -> {
+            cache.close();
+            log.info("successfully close tree cache, service: {}", service);
+          });
+
       client.close();
+      log.info("successfully close client");
     } catch (Exception e) {
       log.error("failed to close client", e);
     }
   }
 
   @Override
-  public void register(String service, String instance) {
+  public void register(Instance instance) {
     try {
-      String servicePath = buildPath(service);
+      String servicePath = instance.getService().buildRegistryPath();
       if (Objects.isNull(client.checkExists().forPath(servicePath))) {
         client.create().withMode(CreateMode.PERSISTENT).forPath(servicePath, "service".getBytes());
         log.debug("create persistent node, servicePath: {}", servicePath);
       }
 
-      String instancePath = buildPath(service, instance);
+      String instancePath = instance.buildRegistryPath();
       if (Objects.isNull(client.checkExists().forPath(instancePath))) {
         client.create().withMode(CreateMode.EPHEMERAL).forPath(instancePath, "instance".getBytes());
         log.debug("create ephemeral node, instancePath: {}", instancePath);
       }
-      log.info("register successfully, service: {}, instance: {}", service, instance);
+      log.info("register successfully, service: {}, instance: {}", instance.getService(), instance);
     } catch (Exception e) {
-      log.error("register fail, service: %s, instance: %s".formatted(service, instance), e);
+      log.error(
+          "register fail, service: %s, instance: %s".formatted(instance.getService(), instance), e);
     }
   }
 
   @Override
-  public void unregister(String service, String instance) {
+  public void unregister(Instance instance) {
     try {
-      if (Objects.isNull(client.checkExists().forPath(buildPath(service)))) {
-        log.warn("'{}' has not been registered yet, unable to unregister", service);
+      if (Objects.isNull(client.checkExists().forPath(instance.getService().buildRegistryPath()))) {
+        log.warn("'{}' has not been registered yet, unable to unregister", instance.getService());
         return;
       }
 
-      String instancePath = buildPath(service, instance);
+      String instancePath = instance.buildRegistryPath();
       if (Objects.isNull(client.checkExists().forPath(instancePath))) {
-        log.warn("'{}/{}' has not been registered yet, unable to unregister", service, instance);
+        log.warn(
+            "'{}/{}' has not been registered yet, unable to unregister",
+            instance.getService(),
+            instance);
         return;
       }
 
       client.delete().quietly().forPath(instancePath);
-      log.info("unregister successfully, service: {}, instance: {}", service, instance);
+      log.info(
+          "unregister successfully, service: {}, instance: {}", instance.getService(), instance);
     } catch (Exception e) {
-      log.error("unregister fail, service: %s, instance: %s".formatted(service, instance), e);
+      log.error(
+          "unregister fail, service: %s, instance: %s".formatted(instance.getService(), instance),
+          e);
     }
   }
 
   @Override
-  public List<String> fetchInstances(String service) {
+  public List<String> fetchInstances(Service service) {
     try {
-      return client.getChildren().forPath(buildPath(service));
+      return client.getChildren().forPath(service.buildRegistryPath());
     } catch (Exception e) {
       log.error("fetchInstances fail, service: %s".formatted(service), e);
       return Collections.emptyList();
@@ -111,13 +131,11 @@ public class ZookeeperRegistry implements Registry {
   }
 
   @Override
-  public void subscribe(String service, RegistryChangedListener listener) {
+  public void subscribe(Service service, RegistryChangedListener listener) {
     try {
+      String registryPath = service.buildRegistryPath();
       TreeCache cache =
-          TreeCache.newBuilder(client, buildPath(service))
-              .setCacheData(true)
-              .setMaxDepth(1 << 1)
-              .build();
+          TreeCache.newBuilder(client, registryPath).setCacheData(true).setMaxDepth(1 << 1).build();
       cache
           .getListenable()
           .addListener(
@@ -130,17 +148,10 @@ public class ZookeeperRegistry implements Registry {
                         .build());
               });
       cache.start();
+      caches.putIfAbsent(registryPath, cache);
       log.info("subscribe successfully, service: {}", service);
     } catch (Exception e) {
       log.error("subscribe fail, service: %s".formatted(service), e);
     }
-  }
-
-  private String buildPath(final String service) {
-    return "/" + service;
-  }
-
-  private String buildPath(final String service, final String instance) {
-    return String.join("/", buildPath(service), instance);
   }
 }

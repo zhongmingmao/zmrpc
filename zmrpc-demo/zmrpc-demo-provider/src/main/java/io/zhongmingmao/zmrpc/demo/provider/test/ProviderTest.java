@@ -7,7 +7,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.zhongmingmao.zmrpc.core.api.request.RpcRequest;
 import io.zhongmingmao.zmrpc.core.api.request.RpcRequestArg;
-import io.zhongmingmao.zmrpc.core.provider.ProviderBootstrap;
+import io.zhongmingmao.zmrpc.core.provider.ProviderInvoker;
 import io.zhongmingmao.zmrpc.core.util.MethodUtil;
 import io.zhongmingmao.zmrpc.demo.api.user.User;
 import io.zhongmingmao.zmrpc.demo.api.user.UserService;
@@ -31,7 +31,7 @@ public class ProviderTest {
 
   private static final String SERVICE = UserService.class.getCanonicalName();
 
-  ProviderBootstrap bootstrap;
+  ProviderInvoker invoker;
 
   @Bean
   public ApplicationRunner test() {
@@ -62,7 +62,7 @@ public class ProviderTest {
   private void testFindUser1() {
     String method = "findUser";
     RpcRequest request = RpcRequest.builder().service(SERVICE).method(method).build();
-    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(bootstrap.invoke(request)));
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
   private void testFindUser2() {
@@ -83,7 +83,7 @@ public class ProviderTest {
                       .build()
                 })
             .build();
-    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(bootstrap.invoke(request)));
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
   private void testFindUser3() {
@@ -100,7 +100,7 @@ public class ProviderTest {
                       .build()
                 })
             .build();
-    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(bootstrap.invoke(request)));
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
   private void testFindUserByShort() {
@@ -114,7 +114,7 @@ public class ProviderTest {
                   RpcRequestArg.builder().type(short.class.getCanonicalName()).value(1 << 5).build()
                 })
             .build();
-    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(bootstrap.invoke(request)));
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
   private void testFindUserByFloat() {
@@ -128,7 +128,7 @@ public class ProviderTest {
                   RpcRequestArg.builder().type(float.class.getCanonicalName()).value(1 << 6).build()
                 })
             .build();
-    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(bootstrap.invoke(request)));
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
   private void testFindUserByPrimitiveLong() {
@@ -142,7 +142,7 @@ public class ProviderTest {
                   RpcRequestArg.builder().type(long.class.getCanonicalName()).value(1 << 7).build()
                 })
             .build();
-    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(bootstrap.invoke(request)));
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
   private void testFindUserByLong1() {
@@ -159,7 +159,7 @@ public class ProviderTest {
                       .build()
                 })
             .build();
-    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(bootstrap.invoke(request)));
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
   private void testFindUserByLong2() {
@@ -173,7 +173,7 @@ public class ProviderTest {
                   RpcRequestArg.builder().type(Long.class.getCanonicalName()).value(1 << 8).build()
                 })
             .build();
-    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(bootstrap.invoke(request)));
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
   private void testFindUserByName() {
@@ -190,7 +190,7 @@ public class ProviderTest {
                       .build()
                 })
             .build();
-    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(bootstrap.invoke(request)));
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
   private void testGetId() {
@@ -204,7 +204,7 @@ public class ProviderTest {
                   RpcRequestArg.builder().type(Long.class.getCanonicalName()).value(1 << 9).build()
                 })
             .build();
-    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(bootstrap.invoke(request)));
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
   private void testGetIds() {
@@ -221,7 +221,7 @@ public class ProviderTest {
                       .build()
                 })
             .build();
-    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(bootstrap.invoke(request)));
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
   private void testGetUsers1() {
@@ -242,7 +242,7 @@ public class ProviderTest {
                       .build()
                 })
             .build();
-    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(bootstrap.invoke(request)));
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
   private void testGetUsers2() {
@@ -262,7 +262,7 @@ public class ProviderTest {
                       .build()
                 })
             .build();
-    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(bootstrap.invoke(request)));
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
   private void testGetUsers3() {
@@ -282,7 +282,7 @@ public class ProviderTest {
                       .build()
                 })
             .build();
-    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(bootstrap.invoke(request)));
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
   private void testGetUsers4() {
@@ -299,25 +299,25 @@ public class ProviderTest {
                   RpcRequestArg.builder().type(Map.class.getCanonicalName()).value(users).build()
                 })
             .build();
-    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(bootstrap.invoke(request)));
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
   private void testGetListUsers() {
     String method = "getListUsers";
     RpcRequest request = RpcRequest.builder().service(SERVICE).method(method).build();
-    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(bootstrap.invoke(request)));
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
   private void testGetSetUsers() {
     String method = "getSetUsers";
     RpcRequest request = RpcRequest.builder().service(SERVICE).method(method).build();
-    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(bootstrap.invoke(request)));
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
   private void testGetMapUsers() {
     String method = "getMapUsers";
     RpcRequest request = RpcRequest.builder().service(SERVICE).method(method).build();
-    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(bootstrap.invoke(request)));
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
   private void testGetName() {
@@ -331,7 +331,7 @@ public class ProviderTest {
                   RpcRequestArg.builder().type(Long.class.getCanonicalName()).value(1 << 10).build()
                 })
             .build();
-    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(bootstrap.invoke(request)));
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
   private void testReservedMethod() {
@@ -354,7 +354,7 @@ public class ProviderTest {
       log.error(
           "<== test reserved method: '{}', result: {}",
           method.getName(),
-          toJsonOrEmpty(bootstrap.invoke(request)));
+          toJsonOrEmpty(invoker.invoke(request)));
     }
   }
 }

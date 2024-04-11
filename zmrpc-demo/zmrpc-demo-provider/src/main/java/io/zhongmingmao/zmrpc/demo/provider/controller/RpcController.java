@@ -2,7 +2,7 @@ package io.zhongmingmao.zmrpc.demo.provider.controller;
 
 import io.zhongmingmao.zmrpc.core.api.request.RpcRequest;
 import io.zhongmingmao.zmrpc.core.api.response.RpcResponse;
-import io.zhongmingmao.zmrpc.core.provider.ProviderBootstrap;
+import io.zhongmingmao.zmrpc.core.provider.ProviderInvoker;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -17,10 +17,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/rpc")
 public class RpcController {
 
-  ProviderBootstrap bootstrap;
+  ProviderInvoker invoker;
 
   @PostMapping("/invoke")
   public RpcResponse<?> invoke(final @RequestBody RpcRequest request) {
-    return bootstrap.invoke(request);
+    return invoker.invoke(request);
   }
 }

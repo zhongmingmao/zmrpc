@@ -5,6 +5,9 @@ import io.zhongmingmao.zmrpc.core.api.lb.loadbalancer.RoundRobinLoadBalancer;
 import io.zhongmingmao.zmrpc.core.api.lb.router.Router;
 import io.zhongmingmao.zmrpc.core.api.registry.Registry;
 import io.zhongmingmao.zmrpc.core.api.registry.ZookeeperRegistry;
+import io.zhongmingmao.zmrpc.core.consumer.transport.http.HttpInvoker;
+import io.zhongmingmao.zmrpc.core.consumer.transport.http.OkHttpInvoker;
+import okhttp3.Request;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,8 +23,14 @@ public class ConsumerConfiguration {
   }
 
   @Bean
-  public ConsumerBootstrap consumerBootstrap(final Registry registry) {
-    return new ConsumerBootstrap(registry);
+  public HttpInvoker<Request> httpInvoker() {
+    return new OkHttpInvoker();
+  }
+
+  @Bean
+  public ConsumerBootstrap consumerBootstrap(
+      final Registry registry, final HttpInvoker<Request> httpInvoker) {
+    return new ConsumerBootstrap(registry, httpInvoker);
   }
 
   @Bean

@@ -7,10 +7,11 @@ import static io.zhongmingmao.zmrpc.core.util.JsonUtil.*;
 import com.google.common.base.Defaults;
 import io.zhongmingmao.zmrpc.core.api.context.RpcContext;
 import io.zhongmingmao.zmrpc.core.api.registry.event.RegistryChangedEvent;
+import io.zhongmingmao.zmrpc.core.api.registry.meta.Instance;
 import io.zhongmingmao.zmrpc.core.api.request.RpcRequest;
 import io.zhongmingmao.zmrpc.core.api.response.RpcResponse;
+import io.zhongmingmao.zmrpc.core.consumer.transport.http.HttpInvoker;
 import io.zhongmingmao.zmrpc.core.util.GenericUtil;
-import io.zhongmingmao.zmrpc.core.util.HttpUtil;
 import io.zhongmingmao.zmrpc.core.util.MethodUtil;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -29,9 +30,8 @@ import okhttp3.*;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ZmInvocationHandler implements InvocationHandler {
 
-  OkHttpClient client = HttpUtil.buildClient();
-
-  RpcContext<String> context;
+  RpcContext context;
+  HttpInvoker<Request> httpInvoker;
 
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -44,13 +44,12 @@ public class ZmInvocationHandler implements InvocationHandler {
 
     RpcRequest request =
         RpcRequest.builder()
-            .service(context.getService())
+            .service(context.getService().getName())
             .method(methodName)
             .args(buildRequestArgs(method.getParameterTypes(), args))
             .build();
-    Optional<RpcResponse> response =
-        HttpUtil.execute(client, buildHttpRequest(request), RpcResponse.class);
 
+    Optional<RpcResponse> response = httpInvoker.execute(request, this::buildHttpRequest);
     if (response.isPresent() && response.get().isSuccess()) {
       return GenericUtil.buildValue(
           returnType, method.getGenericReturnType(), response.get().getData());
@@ -75,12 +74,15 @@ public class ZmInvocationHandler implements InvocationHandler {
 
   private Request buildHttpRequest(final RpcRequest request) {
     return new Request.Builder()
-        .url(chooseProvider().orElseThrow(() -> new RuntimeException("find no providers")))
+        .url(
+            chooseProvider()
+                .map(Instance::buildUri)
+                .orElseThrow(() -> new RuntimeException("find no providers")))
         .post(RequestBody.create(toJsonOrEmpty(request), JSON))
         .build();
   }
 
-  private Optional<String> chooseProvider() {
+  private Optional<Instance> chooseProvider() {
     return context.getLoadBalancer().choose(context.getRouter().route(context.getProviders()));
   }
 }

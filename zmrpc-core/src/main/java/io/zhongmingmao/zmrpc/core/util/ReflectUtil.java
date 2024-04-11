@@ -1,9 +1,15 @@
 package io.zhongmingmao.zmrpc.core.util;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.zhongmingmao.zmrpc.core.annotatation.ZmConsumer;
 import lombok.extern.slf4j.Slf4j;
 
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Consumer:<br>
@@ -36,6 +42,20 @@ public final class ReflectUtil {
     TYPE_CACHE.put("long[]", long[].class);
     TYPE_CACHE.put("float[]", float[].class);
     TYPE_CACHE.put("double[]", double[].class);
+  }
+
+  public static List<Field> findConsumerFields(Class<?> klass) {
+    // klass maybe proxied
+    List<Field> fields = Lists.newArrayList();
+    while (Objects.nonNull(klass)) {
+      List<Field> consumerFields =
+          Arrays.stream(klass.getDeclaredFields())
+              .filter(field -> field.isAnnotationPresent(ZmConsumer.class))
+              .toList();
+      fields.addAll(consumerFields);
+      klass = klass.getSuperclass();
+    }
+    return fields;
   }
 
   public static Class<?> findClass(final String type) {

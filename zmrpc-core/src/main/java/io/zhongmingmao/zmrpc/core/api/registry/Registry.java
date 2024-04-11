@@ -1,6 +1,8 @@
 package io.zhongmingmao.zmrpc.core.api.registry;
 
 import io.zhongmingmao.zmrpc.core.api.registry.event.RegistryChangedListener;
+import io.zhongmingmao.zmrpc.core.api.registry.meta.Instance;
+import io.zhongmingmao.zmrpc.core.api.registry.meta.Service;
 
 import java.util.List;
 
@@ -10,11 +12,11 @@ public interface Registry {
 
   void stop();
 
-  void register(final String service, final String instance);
+  void register(final Instance instance);
 
-  void unregister(final String service, final String instance);
+  void unregister(final Instance instance);
 
-  List<String> fetchInstances(final String service);
+  List<String> fetchInstances(final Service service);
 
-  void subscribe(final String service, final RegistryChangedListener listener);
+  void subscribe(final Service service, final RegistryChangedListener listener);
 }
