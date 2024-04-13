@@ -1,6 +1,6 @@
 package io.zhongmingmao.zmrpc.core.api.context;
 
-import io.zhongmingmao.zmrpc.core.api.lb.filter.Filter;
+import io.zhongmingmao.zmrpc.core.api.filter.Filter;
 import io.zhongmingmao.zmrpc.core.api.lb.loadbalancer.LoadBalancer;
 import io.zhongmingmao.zmrpc.core.api.lb.router.Router;
 import io.zhongmingmao.zmrpc.core.api.registry.meta.Instance;
@@ -19,7 +19,7 @@ public class RpcContext {
   Service service;
   List<Instance> providers;
 
-  Filter<Instance> filter;
+  List<Filter<?>> filters;
   Router<Instance> router;
   LoadBalancer<Instance> loadBalancer;
 }

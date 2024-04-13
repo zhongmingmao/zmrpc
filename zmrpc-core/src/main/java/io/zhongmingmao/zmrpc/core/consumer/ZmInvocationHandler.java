@@ -6,6 +6,7 @@ import static io.zhongmingmao.zmrpc.core.util.JsonUtil.*;
 
 import com.google.common.base.Defaults;
 import io.zhongmingmao.zmrpc.core.api.context.RpcContext;
+import io.zhongmingmao.zmrpc.core.api.filter.Filter;
 import io.zhongmingmao.zmrpc.core.api.registry.event.RegistryChangedEvent;
 import io.zhongmingmao.zmrpc.core.api.registry.meta.Instance;
 import io.zhongmingmao.zmrpc.core.api.request.RpcRequest;
@@ -15,6 +16,7 @@ import io.zhongmingmao.zmrpc.core.util.GenericUtil;
 import io.zhongmingmao.zmrpc.core.util.MethodUtil;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -49,7 +51,29 @@ public class ZmInvocationHandler implements InvocationHandler {
             .args(buildRequestArgs(method.getParameterTypes(), args))
             .build();
 
-    Optional<RpcResponse> response = httpInvoker.execute(request, this::buildHttpRequest);
+    List<Filter<?>> filters = context.getFilters();
+
+    Optional<RpcResponse> response = Optional.empty();
+
+    boolean intercepted = false;
+    for (Filter<?> filter : filters) {
+      Optional<? extends RpcResponse<?>> interceptedResponse = filter.preFilter(request);
+      if (interceptedResponse.isPresent()) {
+        response = Optional.of(interceptedResponse.get());
+        intercepted = true;
+        break;
+      }
+    }
+
+    if (!intercepted) {
+      response = httpInvoker.execute(request, this::buildHttpRequest);
+      for (Filter<?> filter : filters) {
+        if (response.isPresent()) {
+          response = filter.postFilter(request, response.get());
+        }
+      }
+    }
+
     if (response.isPresent() && response.get().isSuccess()) {
       return GenericUtil.buildValue(
           returnType, method.getGenericReturnType(), response.get().getData());

@@ -8,13 +8,15 @@ import io.zhongmingmao.zmrpc.demo.api.user.User;
 import io.zhongmingmao.zmrpc.demo.api.user.UserService;
 import java.util.Arrays;
 import java.util.Map;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Slf4j
 @Configuration
+@Slf4j
+@FieldDefaults(level = lombok.AccessLevel.PRIVATE)
 public class ConsumerTest {
 
   @ZmConsumer UserService userService;

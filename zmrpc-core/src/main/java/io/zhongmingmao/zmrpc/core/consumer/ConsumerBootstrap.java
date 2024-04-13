@@ -3,6 +3,7 @@ package io.zhongmingmao.zmrpc.core.consumer;
 import static io.zhongmingmao.zmrpc.core.util.ReflectUtil.findConsumerFields;
 
 import io.zhongmingmao.zmrpc.core.api.context.RpcContext;
+import io.zhongmingmao.zmrpc.core.api.filter.Filter;
 import io.zhongmingmao.zmrpc.core.api.lb.loadbalancer.LoadBalancer;
 import io.zhongmingmao.zmrpc.core.api.lb.router.Router;
 import io.zhongmingmao.zmrpc.core.api.registry.Registry;
@@ -14,6 +15,7 @@ import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +24,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 @Slf4j
+@RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ConsumerBootstrap implements ApplicationContextAware {
 
@@ -29,11 +32,9 @@ public class ConsumerBootstrap implements ApplicationContextAware {
 
   final Registry registry;
   final HttpInvoker<Request> httpInvoker;
-
-  public ConsumerBootstrap(final Registry registry, final HttpInvoker<Request> httpInvoker) {
-    this.registry = registry;
-    this.httpInvoker = httpInvoker;
-  }
+  final List<Filter<?>> filters;
+  final Router<Instance> router;
+  final LoadBalancer<Instance> loadBalancer;
 
   public void buildProxyConsumers() {
     String[] names = applicationContext.getBeanDefinitionNames();
@@ -70,8 +71,9 @@ public class ConsumerBootstrap implements ApplicationContextAware {
     return RpcContext.builder()
         .service(Service.of(service.getCanonicalName()))
         .providers(fetchProviders(service.getCanonicalName()))
-        .router(applicationContext.getBean(Router.class))
-        .loadBalancer(applicationContext.getBean(LoadBalancer.class))
+        .filters(filters)
+        .router(router)
+        .loadBalancer(loadBalancer)
         .build();
   }
 

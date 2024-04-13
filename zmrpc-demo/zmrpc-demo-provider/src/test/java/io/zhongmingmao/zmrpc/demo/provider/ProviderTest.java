@@ -1,4 +1,4 @@
-package io.zhongmingmao.zmrpc.demo.provider.test;
+package io.zhongmingmao.zmrpc.demo.provider;
 
 import static io.zhongmingmao.zmrpc.core.util.JsonUtil.toJsonOrEmpty;
 
@@ -19,53 +19,32 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 
+@SpringBootTest
+@RunWith(SpringRunner.class)
 @Slf4j
 @RequiredArgsConstructor
-@FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
-@Configuration
+@FieldDefaults(level = lombok.AccessLevel.PRIVATE)
 public class ProviderTest {
 
   private static final String SERVICE = UserService.class.getCanonicalName();
 
-  ProviderInvoker invoker;
+  @Autowired ProviderInvoker invoker;
 
-  @Bean
-  public ApplicationRunner test() {
-    return args -> {
-      testFindUser1();
-      testFindUser2();
-      testFindUser3();
-      testFindUserByShort();
-      testFindUserByFloat();
-      testFindUserByPrimitiveLong();
-      testFindUserByLong1();
-      testFindUserByLong2();
-      testFindUserByName();
-      testGetId();
-      testGetIds();
-      testGetUsers1();
-      testGetUsers2();
-      testGetUsers3();
-      testGetUsers4();
-      testGetListUsers();
-      testGetSetUsers();
-      testGetMapUsers();
-      testGetName();
-      testReservedMethod();
-    };
-  }
-
-  private void testFindUser1() {
+  @Test
+  public void testFindUser1() {
     String method = "findUser";
     RpcRequest request = RpcRequest.builder().service(SERVICE).method(method).build();
     log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
-  private void testFindUser2() {
+  @Test
+  public void testFindUser2() {
     String method = "findUser";
     RpcRequest request =
         RpcRequest.builder()
@@ -86,7 +65,8 @@ public class ProviderTest {
     log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
-  private void testFindUser3() {
+  @Test
+  public void testFindUser3() {
     String method = "findUser";
     RpcRequest request =
         RpcRequest.builder()
@@ -103,7 +83,8 @@ public class ProviderTest {
     log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
-  private void testFindUserByShort() {
+  @Test
+  public void testFindUserByShort() {
     String method = "findUserByShort";
     RpcRequest request =
         RpcRequest.builder()
@@ -117,7 +98,8 @@ public class ProviderTest {
     log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
-  private void testFindUserByFloat() {
+  @Test
+  public void testFindUserByFloat() {
     String method = "findUserByFloat";
     RpcRequest request =
         RpcRequest.builder()
@@ -131,7 +113,8 @@ public class ProviderTest {
     log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
-  private void testFindUserByPrimitiveLong() {
+  @Test
+  public void testFindUserByPrimitiveLong() {
     String method = "findUserByPrimitiveLong";
     RpcRequest request =
         RpcRequest.builder()
@@ -145,7 +128,8 @@ public class ProviderTest {
     log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
-  private void testFindUserByLong1() {
+  @Test
+  public void testFindUserByLong1() {
     String method = "findUserByLong";
     RpcRequest request =
         RpcRequest.builder()
@@ -162,7 +146,8 @@ public class ProviderTest {
     log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
-  private void testFindUserByLong2() {
+  @Test
+  public void testFindUserByLong2() {
     String method = "findUserByLong";
     RpcRequest request =
         RpcRequest.builder()
@@ -176,7 +161,8 @@ public class ProviderTest {
     log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
-  private void testFindUserByName() {
+  @Test
+  public void testFindUserByName() {
     String method = "findUserByName";
     RpcRequest request =
         RpcRequest.builder()
@@ -193,7 +179,8 @@ public class ProviderTest {
     log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
-  private void testGetId() {
+  @Test
+  public void testGetId() {
     String method = "getId";
     RpcRequest request =
         RpcRequest.builder()
@@ -207,7 +194,8 @@ public class ProviderTest {
     log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
-  private void testGetIds() {
+  @Test
+  public void testGetIds() {
     String method = "getIds";
     RpcRequest request =
         RpcRequest.builder()
@@ -224,7 +212,8 @@ public class ProviderTest {
     log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
-  private void testGetUsers1() {
+  @Test
+  public void testGetUsers1() {
     String method = "getUsers";
     RpcRequest request =
         RpcRequest.builder()
@@ -245,7 +234,8 @@ public class ProviderTest {
     log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
-  private void testGetUsers2() {
+  @Test
+  public void testGetUsers2() {
     String method = "getUsers";
     RpcRequest request =
         RpcRequest.builder()
@@ -265,7 +255,8 @@ public class ProviderTest {
     log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
-  private void testGetUsers3() {
+  @Test
+  public void testGetUsers3() {
     String method = "getUsers";
     RpcRequest request =
         RpcRequest.builder()
@@ -285,7 +276,8 @@ public class ProviderTest {
     log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
-  private void testGetUsers4() {
+  @Test
+  public void testGetUsers4() {
     String method = "getUsers";
     Map<Integer, User> users = Maps.newHashMap();
     users.put(1 << 7, User.builder().id((long) (1 << 7)).name("getUsers-7").build());
@@ -302,25 +294,29 @@ public class ProviderTest {
     log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
-  private void testGetListUsers() {
+  @Test
+  public void testGetListUsers() {
     String method = "getListUsers";
     RpcRequest request = RpcRequest.builder().service(SERVICE).method(method).build();
     log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
-  private void testGetSetUsers() {
+  @Test
+  public void testGetSetUsers() {
     String method = "getSetUsers";
     RpcRequest request = RpcRequest.builder().service(SERVICE).method(method).build();
     log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
-  private void testGetMapUsers() {
+  @Test
+  public void testGetMapUsers() {
     String method = "getMapUsers";
     RpcRequest request = RpcRequest.builder().service(SERVICE).method(method).build();
     log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
-  private void testGetName() {
+  @Test
+  public void testGetName() {
     String method = "getName";
     RpcRequest request =
         RpcRequest.builder()
@@ -334,7 +330,8 @@ public class ProviderTest {
     log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
   }
 
-  private void testReservedMethod() {
+  @Test
+  public void testReservedMethod() {
     for (Method method : Objects.class.getMethods()) {
       if (!MethodUtil.isReservedMethod(method.getName())) {
         continue;
