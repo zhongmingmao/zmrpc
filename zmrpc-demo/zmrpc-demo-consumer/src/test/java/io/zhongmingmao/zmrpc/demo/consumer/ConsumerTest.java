@@ -7,7 +7,9 @@ import io.zhongmingmao.zmrpc.core.test.EmbeddedZookeeper;
 import io.zhongmingmao.zmrpc.demo.api.user.User;
 import io.zhongmingmao.zmrpc.demo.api.user.UserService;
 import io.zhongmingmao.zmrpc.demo.consumer.controller.LoadBalancingController;
-import io.zhongmingmao.zmrpc.demo.provider.DemoProviderApplication;
+import io.zhongmingmao.zmrpc.demo.provider.TestDemoProviderApplication;
+import java.util.Arrays;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
@@ -17,9 +19,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ConfigurableApplicationContext;
-
-import java.util.Arrays;
-import java.util.Map;
 
 @SpringBootTest
 @Slf4j
@@ -37,7 +36,7 @@ public class ConsumerTest {
   public static void beforeAll() {
     EMBEDDED_ZOOKEEPER.start();
 
-    provider = SpringApplication.run(DemoProviderApplication.class, "--server.port=7001");
+    provider = SpringApplication.run(TestDemoProviderApplication.class, "--server.port=7001");
     consumer = SpringApplication.run(DemoConsumerApplication.class, "--server.port=7002");
     userService = consumer.getBean(LoadBalancingController.class).getUserService();
   }
