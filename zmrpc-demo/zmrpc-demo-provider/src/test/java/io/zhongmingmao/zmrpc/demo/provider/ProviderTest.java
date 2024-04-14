@@ -1,7 +1,5 @@
 package io.zhongmingmao.zmrpc.demo.provider;
 
-import static io.zhongmingmao.zmrpc.core.util.JsonUtil.toJsonOrEmpty;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -11,22 +9,22 @@ import io.zhongmingmao.zmrpc.core.provider.ProviderInvoker;
 import io.zhongmingmao.zmrpc.core.util.MethodUtil;
 import io.zhongmingmao.zmrpc.demo.api.user.User;
 import io.zhongmingmao.zmrpc.demo.api.user.UserService;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+
+import static io.zhongmingmao.zmrpc.core.util.JsonUtil.toJsonOrEmpty;
 
 @SpringBootTest
-@RunWith(SpringRunner.class)
 @Slf4j
 @RequiredArgsConstructor
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE)
@@ -35,6 +33,9 @@ public class ProviderTest {
   private static final String SERVICE = UserService.class.getCanonicalName();
 
   @Autowired ProviderInvoker invoker;
+
+  @Test
+  public void testProvider() {}
 
   @Test
   public void testFindUser1() {

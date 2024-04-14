@@ -1,101 +1,110 @@
-package io.zhongmingmao.zmrpc.demo.consumer.test;
+package io.zhongmingmao.zmrpc.demo.consumer;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import io.zhongmingmao.zmrpc.core.annotatation.ZmConsumer;
 import io.zhongmingmao.zmrpc.demo.api.user.User;
 import io.zhongmingmao.zmrpc.demo.api.user.UserService;
-import java.util.Arrays;
-import java.util.Map;
+import io.zhongmingmao.zmrpc.demo.consumer.controller.LoadBalancingController;
+import io.zhongmingmao.zmrpc.demo.provider.DemoProviderApplication;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ConfigurableApplicationContext;
 
-@Configuration
+import java.util.Arrays;
+import java.util.Map;
+
+@SpringBootTest
 @Slf4j
+@RequiredArgsConstructor
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE)
 public class ConsumerTest {
 
-  @ZmConsumer UserService userService;
+  private static ConfigurableApplicationContext provider;
+  private static ConfigurableApplicationContext consumer;
+  private static UserService userService;
 
-  @Bean
-  public ApplicationRunner test() {
-    return args -> {
-      testFindUser1();
-      testFindUser2();
-      testFindUser3();
-      testFindUserByShort();
-      testFindUserByFloat();
-      testFindUserByPrimitiveLong();
-      testFindUserByLong1();
-      testFindUserByLong2();
-      testFindUserByName();
-      testGetId();
-      testGetIds();
-      testGetUsers1();
-      testGetUsers2();
-      testGetUsers3();
-      testGetUsers4();
-      testGetListUsers();
-      testGetSetUsers();
-      testGetMapUsers();
-      testGetName();
-      testReservedMethod();
-      testLoadBalancing();
-    };
+  @BeforeAll
+  public static void beforeAll() {
+    provider = SpringApplication.run(DemoProviderApplication.class, "--server.port=7001");
+    consumer = SpringApplication.run(DemoConsumerApplication.class, "--server.port=7002");
+    userService = consumer.getBean(LoadBalancingController.class).getUserService();
   }
 
-  private void testFindUser1() {
+  @AfterAll
+  public static void afterAll() {
+    SpringApplication.exit(consumer, () -> 1);
+    SpringApplication.exit(provider, () -> 1);
+  }
+
+  @Test
+  public void testConsumer() {}
+
+  @Test
+  public void testFindUser1() {
     log.info("testFindUser1, result: {}", userService.findUser());
   }
 
-  private void testFindUser2() {
+  @Test
+  public void testFindUser2() {
     log.info("testFindUser2, result: {}", userService.findUser(1, "testFindUser2"));
   }
 
-  private void testFindUser3() {
+  @Test
+  public void testFindUser3() {
     log.info(
         "testFindUser3, result: {}",
         userService.findUser(User.builder().id((long) (1 << 2)).name("testFindUser3").build()));
   }
 
-  private void testFindUserByShort() {
+  @Test
+  public void testFindUserByShort() {
     log.info("testFindUserByShort, result: {}", userService.findUserByShort((short) (1 << 1)));
   }
 
-  private void testFindUserByFloat() {
+  @Test
+  public void testFindUserByFloat() {
     log.info("testFindUserByFloat, result: {}", userService.findUserByFloat(1 << 2));
   }
 
-  private void testFindUserByPrimitiveLong() {
+  @Test
+  public void testFindUserByPrimitiveLong() {
     log.info(
         "testFindUserByPrimitiveLong, result: {}", userService.findUserByPrimitiveLong(1 << 3));
   }
 
-  private void testFindUserByLong1() {
+  @Test
+  public void testFindUserByLong1() {
     log.info("testFindUserByLong1, result: {}", userService.findUserByLong((long) -(1 << 4)));
   }
 
-  private void testFindUserByLong2() {
+  public void testFindUserByLong2() {
     log.info("testFindUserByLong2, result: {}", userService.findUserByLong((long) (1 << 4)));
   }
 
-  private void testFindUserByName() {
+  @Test
+  public void testFindUserByName() {
     log.info("testFindUserByName, result: {}", userService.findUserByName("testFindUserByName"));
   }
 
-  private void testGetId() {
+  @Test
+  public void testGetId() {
     log.info("testGetId, result: {}", userService.getId((long) (1 << 5)));
   }
 
-  private void testGetIds() {
+  @Test
+  public void testGetIds() {
     log.info("testGetIds, result: {}", userService.getIds(new long[] {1 << 1, 1 << 2, 1 << 3}));
   }
 
-  private void testGetUsers1() {
+  @Test
+  public void testGetUsers1() {
     Arrays.stream(
             userService.getUsers(
                 new User[] {
@@ -105,7 +114,8 @@ public class ConsumerTest {
         .forEach(user -> log.info("testGetUsers1, result: {}", user));
   }
 
-  private void testGetUsers2() {
+  @Test
+  public void testGetUsers2() {
     Arrays.stream(
             userService.getUsers(
                 Lists.newArrayList(
@@ -114,7 +124,8 @@ public class ConsumerTest {
         .forEach(user -> log.info("testGetUsers2, result: {}", user));
   }
 
-  private void testGetUsers3() {
+  @Test
+  public void testGetUsers3() {
     Arrays.stream(
             userService.getUsers(
                 Sets.newHashSet(
@@ -123,7 +134,8 @@ public class ConsumerTest {
         .forEach(user -> log.info("testGetUsers3, result: {}", user));
   }
 
-  private void testGetUsers4() {
+  @Test
+  public void testGetUsers4() {
     Map<Integer, User> users = Maps.newHashMap();
     users.put(1 << 7, User.builder().id((long) (1 << 7)).name("getUsers-7").build());
     users.put(1 << 8, User.builder().id((long) (1 << 8)).name("getUsers-8").build());
@@ -131,30 +143,36 @@ public class ConsumerTest {
         .forEach(user -> log.info("testGetUsers3, result: {}", user));
   }
 
-  private void testGetListUsers() {
+  @Test
+  public void testGetListUsers() {
     userService.getListUsers().forEach(user -> log.info("testGetListUsers, result: {}", user));
   }
 
-  private void testGetSetUsers() {
+  @Test
+  public void testGetSetUsers() {
     userService.getSetUsers().forEach(user -> log.info("testGetSetUsers, result: {}", user));
   }
 
-  private void testGetMapUsers() {
+  @Test
+  public void testGetMapUsers() {
     userService
         .getMapUsers()
         .forEach((id, user) -> log.info("testGetMapUsers, id: {}, user: {}", id, user));
   }
 
-  private void testGetName() {
+  @Test
+  public void testGetName() {
     log.info("testGetName, result: {}", userService.getName((long) (1 << 10)));
   }
 
-  private void testReservedMethod() {
+  @Test
+  public void testReservedMethod() {
     log.info("testToString, result: {}", userService.toString());
     log.info("testHashCode, result: {}", userService.hashCode());
   }
 
-  private void testLoadBalancing() {
+  @Test
+  public void testLoadBalancing() {
     int count = 1 << 3;
     log.info("testLoadBalancing start");
     for (int i = 0; i < count; i++) {

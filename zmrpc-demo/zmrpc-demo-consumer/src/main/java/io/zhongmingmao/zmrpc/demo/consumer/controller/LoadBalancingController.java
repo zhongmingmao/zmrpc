@@ -3,6 +3,7 @@ package io.zhongmingmao.zmrpc.demo.consumer.controller;
 import io.zhongmingmao.zmrpc.core.annotatation.ZmConsumer;
 import io.zhongmingmao.zmrpc.demo.api.user.UserService;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class LoadBalancingController {
 
-  @ZmConsumer UserService userService;
+  @Getter @ZmConsumer UserService userService;
 
   @GetMapping("/subscribe")
   public void subscribe() {
