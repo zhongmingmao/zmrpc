@@ -6,15 +6,19 @@ import com.google.common.collect.Sets;
 import io.zhongmingmao.zmrpc.core.api.request.RpcRequest;
 import io.zhongmingmao.zmrpc.core.api.request.RpcRequestArg;
 import io.zhongmingmao.zmrpc.core.provider.ProviderInvoker;
+import io.zhongmingmao.zmrpc.core.test.EmbeddedZookeeper;
 import io.zhongmingmao.zmrpc.core.util.MethodUtil;
 import io.zhongmingmao.zmrpc.demo.api.user.User;
 import io.zhongmingmao.zmrpc.demo.api.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -31,8 +35,25 @@ import static io.zhongmingmao.zmrpc.core.util.JsonUtil.toJsonOrEmpty;
 public class ProviderTest {
 
   private static final String SERVICE = UserService.class.getCanonicalName();
+  private static final EmbeddedZookeeper EMBEDDED_ZOOKEEPER = new EmbeddedZookeeper();
 
-  @Autowired ProviderInvoker invoker;
+  private static ConfigurableApplicationContext provider;
+  private static ProviderInvoker invoker;
+
+  @BeforeAll
+  public static void beforeAll() {
+    EMBEDDED_ZOOKEEPER.start();
+
+    provider = SpringApplication.run(DemoProviderApplication.class, "--server.port=7001");
+    invoker = provider.getBean(ProviderInvoker.class);
+  }
+
+  @AfterAll
+  public static void afterAll() {
+    SpringApplication.exit(provider, () -> 1);
+
+    EMBEDDED_ZOOKEEPER.stop();
+  }
 
   @Test
   public void testProvider() {}

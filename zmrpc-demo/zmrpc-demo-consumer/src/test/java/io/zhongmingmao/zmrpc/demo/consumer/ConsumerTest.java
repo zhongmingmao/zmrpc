@@ -3,6 +3,7 @@ package io.zhongmingmao.zmrpc.demo.consumer;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import io.zhongmingmao.zmrpc.core.test.EmbeddedZookeeper;
 import io.zhongmingmao.zmrpc.demo.api.user.User;
 import io.zhongmingmao.zmrpc.demo.api.user.UserService;
 import io.zhongmingmao.zmrpc.demo.consumer.controller.LoadBalancingController;
@@ -26,12 +27,16 @@ import java.util.Map;
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE)
 public class ConsumerTest {
 
+  private static final EmbeddedZookeeper EMBEDDED_ZOOKEEPER = new EmbeddedZookeeper();
+
   private static ConfigurableApplicationContext provider;
   private static ConfigurableApplicationContext consumer;
   private static UserService userService;
 
   @BeforeAll
   public static void beforeAll() {
+    EMBEDDED_ZOOKEEPER.start();
+
     provider = SpringApplication.run(DemoProviderApplication.class, "--server.port=7001");
     consumer = SpringApplication.run(DemoConsumerApplication.class, "--server.port=7002");
     userService = consumer.getBean(LoadBalancingController.class).getUserService();
@@ -41,6 +46,8 @@ public class ConsumerTest {
   public static void afterAll() {
     SpringApplication.exit(consumer, () -> 1);
     SpringApplication.exit(provider, () -> 1);
+
+    EMBEDDED_ZOOKEEPER.stop();
   }
 
   @Test
