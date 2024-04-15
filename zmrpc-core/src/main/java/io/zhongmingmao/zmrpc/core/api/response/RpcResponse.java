@@ -11,5 +11,5 @@ import lombok.experimental.FieldDefaults;
 public class RpcResponse<T> {
   boolean success;
   T data;
-  String error;
+  Throwable error;
 }

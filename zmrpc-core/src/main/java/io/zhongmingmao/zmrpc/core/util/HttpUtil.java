@@ -1,5 +1,6 @@
 package io.zhongmingmao.zmrpc.core.util;
 
+import io.zhongmingmao.zmrpc.core.api.error.RpcExceptions;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -42,16 +43,16 @@ public final class HttpUtil {
       context.init(null, TRUST_ALL_CERTS, new java.security.SecureRandom());
       OkHttpClient.Builder builder =
           new OkHttpClient.Builder()
-              .connectTimeout(1 << 2, TimeUnit.SECONDS)
-              .readTimeout(1 << 4, TimeUnit.SECONDS)
-              .writeTimeout(1 << 4, TimeUnit.SECONDS);
+              .connectTimeout(1, TimeUnit.SECONDS)
+              .readTimeout(1, TimeUnit.SECONDS)
+              .writeTimeout(1, TimeUnit.SECONDS);
       builder.sslSocketFactory(context.getSocketFactory(), (X509TrustManager) TRUST_ALL_CERTS[0]);
       builder.hostnameVerifier((hostname, session) -> true);
       return builder.build();
     } catch (NoSuchAlgorithmException | KeyManagementException e) {
       String message = "build client fail";
       log.error(message, e);
-      throw new RuntimeException(message, e);
+      throw RpcExceptions.newTechErr(message, e);
     }
   }
 
@@ -69,7 +70,9 @@ public final class HttpUtil {
       }
       log.error("execute fail, code: {}, uri: {}, body: {}", response.code(), request.url(), body);
     } catch (IOException e) {
-      log.error("execute fail, uri: " + request.url(), e);
+      String message = "execute fail, uri: " + request.url();
+      log.error(message, e);
+      throw RpcExceptions.newTechErr(message, e);
     }
     return Optional.empty();
   }

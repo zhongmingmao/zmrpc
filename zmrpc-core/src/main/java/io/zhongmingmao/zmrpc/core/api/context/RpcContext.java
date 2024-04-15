@@ -19,6 +19,8 @@ public class RpcContext {
   Service service;
   List<Instance> providers;
 
+  int retries;
+
   List<Filter<?>> filters;
   Router<Instance> router;
   LoadBalancer<Instance> loadBalancer;

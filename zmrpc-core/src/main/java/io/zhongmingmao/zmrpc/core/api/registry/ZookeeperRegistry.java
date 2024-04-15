@@ -1,11 +1,11 @@
 package io.zhongmingmao.zmrpc.core.api.registry;
 
 import com.google.common.collect.Maps;
+import io.zhongmingmao.zmrpc.core.api.error.RpcExceptions;
 import io.zhongmingmao.zmrpc.core.api.registry.event.RegistryChangedEvent;
 import io.zhongmingmao.zmrpc.core.api.registry.event.RegistryChangedListener;
 import io.zhongmingmao.zmrpc.core.api.registry.meta.Instance;
 import io.zhongmingmao.zmrpc.core.api.registry.meta.Service;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,10 +49,11 @@ public class ZookeeperRegistry implements Registry {
       log.info(
           "successfully connected to zookeeper, address: {}, namespace: {}", address, namespace);
     } catch (Exception e) {
-      log.error(
+      String message =
           "failed to connect to zookeeper, address: %s, namespace: %s"
-              .formatted(address, namespace),
-          e);
+              .formatted(address, namespace);
+      log.error(message, e);
+      throw RpcExceptions.newTechErr(message, e);
     }
   }
 
@@ -68,7 +69,9 @@ public class ZookeeperRegistry implements Registry {
       client.close();
       log.info("successfully close client");
     } catch (Exception e) {
-      log.error("failed to close client", e);
+      String message = "failed to close client";
+      log.error(message, e);
+      throw RpcExceptions.newTechErr(message, e);
     }
   }
 
@@ -88,8 +91,10 @@ public class ZookeeperRegistry implements Registry {
       }
       log.info("register successfully, service: {}, instance: {}", instance.getService(), instance);
     } catch (Exception e) {
-      log.error(
-          "register fail, service: %s, instance: %s".formatted(instance.getService(), instance), e);
+      String message =
+          "register fail, service: %s, instance: %s".formatted(instance.getService(), instance);
+      log.error(message, e);
+      throw RpcExceptions.newTechErr(message, e);
     }
   }
 
@@ -114,9 +119,10 @@ public class ZookeeperRegistry implements Registry {
       log.info(
           "unregister successfully, service: {}, instance: {}", instance.getService(), instance);
     } catch (Exception e) {
-      log.error(
-          "unregister fail, service: %s, instance: %s".formatted(instance.getService(), instance),
-          e);
+      String message =
+          "unregister fail, service: %s, instance: %s".formatted(instance.getService(), instance);
+      log.error(message, e);
+      throw RpcExceptions.newTechErr(message, e);
     }
   }
 
@@ -125,8 +131,9 @@ public class ZookeeperRegistry implements Registry {
     try {
       return client.getChildren().forPath(service.buildRegistryPath());
     } catch (Exception e) {
-      log.error("fetchInstances fail, service: %s".formatted(service), e);
-      return Collections.emptyList();
+      String message = "fetchInstances fail, service: %s".formatted(service);
+      log.error(message, e);
+      throw RpcExceptions.newTechErr(message, e);
     }
   }
 
@@ -151,7 +158,9 @@ public class ZookeeperRegistry implements Registry {
       caches.putIfAbsent(registryPath, cache);
       log.info("subscribe successfully, service: {}", service);
     } catch (Exception e) {
-      log.error("subscribe fail, service: %s".formatted(service), e);
+      String message = "subscribe fail, service: %s".formatted(service);
+      log.error(message, e);
+      throw RpcExceptions.newTechErr(message, e);
     }
   }
 }

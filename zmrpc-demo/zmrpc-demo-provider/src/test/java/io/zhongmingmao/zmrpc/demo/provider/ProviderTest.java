@@ -353,6 +353,21 @@ public class ProviderTest {
   }
 
   @Test
+  public void testSleep() {
+    String method = "sleep";
+    RpcRequest request =
+        RpcRequest.builder()
+            .service(SERVICE)
+            .method(method)
+            .args(
+                new RpcRequestArg[] {
+                  RpcRequestArg.builder().type(long.class.getCanonicalName()).value(1 << 12).build()
+                })
+            .build();
+    log.info("==> test method: '{}', result: {}", method, toJsonOrEmpty(invoker.invoke(request)));
+  }
+
+  @Test
   public void testReservedMethod() {
     for (Method method : Objects.class.getMethods()) {
       if (!MethodUtil.isReservedMethod(method.getName())) {

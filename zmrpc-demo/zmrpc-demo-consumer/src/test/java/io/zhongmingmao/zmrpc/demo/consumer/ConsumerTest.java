@@ -37,7 +37,9 @@ public class ConsumerTest {
     EMBEDDED_ZOOKEEPER.start();
 
     provider = SpringApplication.run(TestDemoProviderApplication.class, "--server.port=7001");
-    consumer = SpringApplication.run(DemoConsumerApplication.class, "--server.port=7002");
+    consumer =
+        SpringApplication.run(
+            DemoConsumerApplication.class, "--server.port=7002", "--zmrpc.consumer.retries=3");
     userService = consumer.getBean(LoadBalancingController.class).getUserService();
   }
 
@@ -90,6 +92,7 @@ public class ConsumerTest {
     log.info("testFindUserByLong1, result: {}", userService.findUserByLong((long) -(1 << 4)));
   }
 
+  @Test
   public void testFindUserByLong2() {
     log.info("testFindUserByLong2, result: {}", userService.findUserByLong((long) (1 << 4)));
   }
@@ -169,6 +172,11 @@ public class ConsumerTest {
   @Test
   public void testGetName() {
     log.info("testGetName, result: {}", userService.getName((long) (1 << 10)));
+  }
+
+  @Test
+  public void testSleep() {
+    log.info("testSleep, result: {}", userService.sleep(1 << 12));
   }
 
   @Test

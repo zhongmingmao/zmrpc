@@ -2,6 +2,7 @@ package io.zhongmingmao.zmrpc.core.provider;
 
 import com.google.common.collect.Maps;
 import io.zhongmingmao.zmrpc.core.annotatation.ZmProvider;
+import io.zhongmingmao.zmrpc.core.api.error.RpcExceptions;
 import io.zhongmingmao.zmrpc.core.api.registry.Registry;
 import io.zhongmingmao.zmrpc.core.api.registry.meta.Instance;
 import io.zhongmingmao.zmrpc.core.api.registry.meta.Service;
@@ -78,8 +79,9 @@ public class ProviderBootstrap implements ApplicationContextAware, EnvironmentAw
       String port = environment.getProperty("server.port", "8080");
       return Optional.of(Instance.of(service, address, Integer.valueOf(port)));
     } catch (UnknownHostException e) {
-      log.error("buildInstance fail", e);
-      return Optional.empty();
+      String message = "buildInstance fail, service: %s".formatted(service);
+      log.error(message, e);
+      throw RpcExceptions.newTechErr(message, e);
     }
   }
 }

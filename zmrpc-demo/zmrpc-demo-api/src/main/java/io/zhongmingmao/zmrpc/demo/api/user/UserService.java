@@ -41,4 +41,6 @@ public interface UserService {
   Map<Long, User> getMapUsers();
 
   String getName(final Long id);
+
+  String sleep(final long ms);
 }

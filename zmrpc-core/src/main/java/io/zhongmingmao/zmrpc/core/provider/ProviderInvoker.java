@@ -3,6 +3,8 @@ package io.zhongmingmao.zmrpc.core.provider;
 import static io.zhongmingmao.zmrpc.core.provider.ProviderUtil.buildRequestArgTypes;
 import static io.zhongmingmao.zmrpc.core.provider.ProviderUtil.buildRequestArgValues;
 
+import io.zhongmingmao.zmrpc.core.api.error.RpcException;
+import io.zhongmingmao.zmrpc.core.api.error.RpcExceptions;
 import io.zhongmingmao.zmrpc.core.api.request.RpcRequest;
 import io.zhongmingmao.zmrpc.core.api.request.RpcRequestArg;
 import io.zhongmingmao.zmrpc.core.api.response.RpcResponse;
@@ -34,11 +36,13 @@ public class ProviderInvoker {
       tryRegisterInvocation(request, sign);
       return doInvoke(invocations.get(sign), request.getArgs());
     } catch (Exception e) {
-      log.error("provider invoke error, request: " + request, e);
-      return RpcResponse.builder()
-          .success(false)
-          .error("provider invoke error, " + e.getMessage())
-          .build();
+      String message = "provider invoke error, request: %s".formatted(request);
+      log.error(message, e);
+      Throwable t = e;
+      if (!(e instanceof RpcException)) {
+        t = RpcExceptions.newUnknownErr(message, e);
+      }
+      return RpcResponse.builder().success(false).error(t).build();
     }
   }
 
@@ -70,7 +74,10 @@ public class ProviderInvoker {
   private RpcResponse<?> doInvoke(final ProviderInvocation invocation, final RpcRequestArg[] args)
       throws InvocationTargetException, IllegalAccessException {
     if (Objects.isNull(invocation)) {
-      return RpcResponse.builder().success(false).error("invocation is null").build();
+      return RpcResponse.builder()
+          .success(false)
+          .error(RpcExceptions.newTechErr("invocation is null"))
+          .build();
     }
 
     Object provider = invocation.getProvider();

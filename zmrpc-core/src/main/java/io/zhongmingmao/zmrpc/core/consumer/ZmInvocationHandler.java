@@ -6,6 +6,8 @@ import static io.zhongmingmao.zmrpc.core.util.JsonUtil.*;
 
 import com.google.common.base.Defaults;
 import io.zhongmingmao.zmrpc.core.api.context.RpcContext;
+import io.zhongmingmao.zmrpc.core.api.error.RpcException;
+import io.zhongmingmao.zmrpc.core.api.error.RpcExceptions;
 import io.zhongmingmao.zmrpc.core.api.filter.Filter;
 import io.zhongmingmao.zmrpc.core.api.registry.event.RegistryChangedEvent;
 import io.zhongmingmao.zmrpc.core.api.registry.meta.Instance;
@@ -16,6 +18,7 @@ import io.zhongmingmao.zmrpc.core.util.GenericUtil;
 import io.zhongmingmao.zmrpc.core.util.MethodUtil;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -37,6 +40,19 @@ public class ZmInvocationHandler implements InvocationHandler {
 
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    int retries = context.getRetries();
+    while (retries-- > 0) {
+      try {
+        log.info("retries: {}, method: {}, args: {}", retries, method, args);
+        return doInvoke(proxy, method, args);
+      } catch (RpcException e) {
+        log.error("invoke fail, method: %s, args: %s".formatted(method, Arrays.toString(args)), e);
+      }
+    }
+    return Defaults.defaultValue(method.getReturnType());
+  }
+
+  public Object doInvoke(Object proxy, Method method, Object[] args) throws RpcException {
     String methodName = method.getName();
     Class<?> returnType = method.getReturnType();
     if (MethodUtil.isReservedMethod(methodName)) {
@@ -74,9 +90,13 @@ public class ZmInvocationHandler implements InvocationHandler {
       }
     }
 
-    if (response.isPresent() && response.get().isSuccess()) {
-      return GenericUtil.buildValue(
-          returnType, method.getGenericReturnType(), response.get().getData());
+    if (response.isPresent()) {
+      if (response.get().isSuccess()) {
+        return GenericUtil.buildValue(
+            returnType, method.getGenericReturnType(), response.get().getData());
+      } else if (Objects.nonNull(response.get().getError())) {
+        throw RpcExceptions.newTechErr("doInvoke fail", response.get().getError());
+      }
     }
 
     return Defaults.defaultValue(returnType);

@@ -3,6 +3,7 @@ package io.zhongmingmao.zmrpc.core.consumer;
 import static io.zhongmingmao.zmrpc.core.util.ReflectUtil.findConsumerFields;
 
 import io.zhongmingmao.zmrpc.core.api.context.RpcContext;
+import io.zhongmingmao.zmrpc.core.api.error.RpcExceptions;
 import io.zhongmingmao.zmrpc.core.api.filter.Filter;
 import io.zhongmingmao.zmrpc.core.api.lb.loadbalancer.LoadBalancer;
 import io.zhongmingmao.zmrpc.core.api.lb.router.Router;
@@ -22,13 +23,16 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.Request;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.EnvironmentAware;
+import org.springframework.core.env.Environment;
 
 @Slf4j
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ConsumerBootstrap implements ApplicationContextAware {
+public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAware {
 
   @Setter ApplicationContext applicationContext;
+  @Setter Environment environment;
 
   final Registry registry;
   final HttpInvoker<Request> httpInvoker;
@@ -51,7 +55,9 @@ public class ConsumerBootstrap implements ApplicationContextAware {
               field.getDeclaringClass().getCanonicalName(),
               field.getName());
         } catch (IllegalAccessException e) {
-          log.error("buildProxyConsumer error", e);
+          String message = "buildProxyConsumer error";
+          log.error(message, e);
+          throw RpcExceptions.newTechErr(message, e);
         }
       }
     }
@@ -71,6 +77,7 @@ public class ConsumerBootstrap implements ApplicationContextAware {
     return RpcContext.builder()
         .service(Service.of(service.getCanonicalName()))
         .providers(fetchProviders(service.getCanonicalName()))
+        .retries(Integer.parseInt(environment.getProperty("zmrpc.consumer.retries", "1")))
         .filters(filters)
         .router(router)
         .loadBalancer(loadBalancer)

@@ -7,8 +7,10 @@ import io.zhongmingmao.zmrpc.core.annotatation.ZmProvider;
 import io.zhongmingmao.zmrpc.demo.api.user.User;
 import io.zhongmingmao.zmrpc.demo.api.user.UserService;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
@@ -166,5 +168,12 @@ public class UserServiceImpl implements UserService {
   @Override
   public String getName(Long id) {
     return id + " - getName(Long id)-" + identity();
+  }
+
+  @SneakyThrows
+  @Override
+  public String sleep(long ms) {
+    TimeUnit.MILLISECONDS.sleep(ms);
+    return "sleep " + ms + " ms";
   }
 }
