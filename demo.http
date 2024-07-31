@@ -1,0 +1,11 @@
+### 获取用户信息
+POST http://localhost:8080
+Content-Type: application/json
+
+{
+  "service": "me.zhongmingmao.zmrpc.demo.api.UserService",
+  "method": "findById",
+  "args": [
+    100
+  ]
+}
