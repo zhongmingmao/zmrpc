@@ -1,23 +1,19 @@
-<!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
+- [服务提供者](#服务提供者)
+  - [请求响应](#请求响应)
+    - [RpcRequest](#rpcrequest)
+    - [RpcResponse](#rpcresponse)
+  - [服务契约](#服务契约)
+  - [服务实现](#服务实现)
+  - [服务注册](#服务注册)
+    - [定义注解](#定义注解)
+    - [使用注解](#使用注解)
+    - [扫描服务](#扫描服务)
+    - [服务调用](#服务调用)
+  - [测试用例](#测试用例)
 
-- [Service Provider](#service-provider)
-   * [Request Response](#request-response)
-      + [RpcRequest](#rpcrequest)
-      + [RpcResponse](#rpcresponse)
-   * [Service Contract](#service-contract)
-   * [Service Implementation](#service-implementation)
-   * [Service Registration](#service-registration)
-      + [Define Annotation](#define-annotation)
-      + [Use Annotation](#use-annotation)
-      + [Scanning Service](#scanning-service)
-      + [Service Invocation](#service-invocation)
-   * [Test Case](#test-case)
+# 服务提供者
 
-<!-- TOC end -->
-
-# Service Provider
-
-## Request Response
+## 请求响应
 
 > 在框架中定义
 > 
@@ -44,7 +40,7 @@ public class RpcResponse<T> {
 }
 ```
 
-## Service Contract
+## 服务契约
 
 ```java
 public interface UserService {
@@ -52,7 +48,7 @@ public interface UserService {
 }
 ```
 
-## Service Implementation
+## 服务实现
 
 > 注册为 Spring Bean
 > 
@@ -82,9 +78,9 @@ public class UserController {
 }
 ```
 
-## Service Registration
+## 服务注册
 
-### Define Annotation
+### 定义注解
 
 ```java
 @Documented
@@ -94,7 +90,7 @@ public class UserController {
 public @interface ZmProvider {}
 ```
 
-### Use Annotation
+### 使用注解
 
 > 在服务提供者上使用注解 - 标记
 > 
@@ -111,7 +107,7 @@ public class UserServiceImpl implements UserService {
 }
 ```
 
-### Scanning Service
+### 扫描服务
 
 > 通过 ApplicationContext 扫描带有 @ZmProvider 注解的 Bean
 > 
@@ -135,7 +131,7 @@ public class UserServiceImpl implements UserService {
   }
 ```
 
-### Service Invocation
+### 服务调用
 
 > 依据 RPC 上下文，通过反射调用实际的方法
 > 
@@ -160,7 +156,7 @@ public class UserServiceImpl implements UserService {
   }
 ```
 
-## Test Case
+## 测试用例
 
 ```java
   // Spring 容器完全就绪后执行
