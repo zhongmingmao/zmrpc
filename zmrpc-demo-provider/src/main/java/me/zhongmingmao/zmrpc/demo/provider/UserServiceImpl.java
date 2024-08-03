@@ -13,4 +13,14 @@ public class UserServiceImpl implements UserService {
   public User findById(int id) {
     return User.builder().id(0).name("zhongmingmao").build();
   }
+
+  @Override
+  public int getId(int id) {
+    return id;
+  }
+
+  @Override
+  public String getName() {
+    return "zhongmingmao";
+  }
 }

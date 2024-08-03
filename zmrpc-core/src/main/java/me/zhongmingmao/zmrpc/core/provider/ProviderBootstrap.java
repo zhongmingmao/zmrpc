@@ -36,15 +36,30 @@ public class ProviderBootstrap implements ApplicationContextAware {
   }
 
   public RpcResponse invoke(RpcRequest request) {
-    Object provider = skeleton.get(request.getService());
+    if (request.getMethod().equals("toString")
+        || request.getMethod().equals("hashCode")
+        || request.getMethod().equals("equals")) {
+      return null;
+    }
 
+    RpcResponse response = new RpcResponse();
+
+    Object provider = skeleton.get(request.getService());
     try {
       Method method = findMethod(provider.getClass(), request.getMethod());
       Object result = method.invoke(provider, request.getArgs());
-      return new RpcResponse(true, result);
-    } catch (InvocationTargetException | IllegalAccessException e) {
-      throw new RuntimeException(e);
+
+      response.setStatus(true);
+      response.setData(result);
+      return response;
+      // 简化异常信息，无需将 Provider 完整堆栈返回给 Consumer
+    } catch (InvocationTargetException e) {
+      response.setEx(new RuntimeException(e.getTargetException().getMessage()));
+    } catch (IllegalAccessException e) {
+      response.setEx(new RuntimeException(e.getMessage()));
     }
+
+    return response;
   }
 
   private Method findMethod(Class<?> klass, String methodName) {
