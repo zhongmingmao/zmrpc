@@ -1,8 +1,10 @@
 package me.zhongmingmao.zmrpc.core.consumer;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
@@ -11,6 +13,7 @@ import lombok.experimental.FieldDefaults;
 import me.zhongmingmao.zmrpc.core.api.RpcRequest;
 import me.zhongmingmao.zmrpc.core.api.RpcResponse;
 import me.zhongmingmao.zmrpc.core.util.MethodUtils;
+import me.zhongmingmao.zmrpc.core.util.TypeUtils;
 import okhttp3.*;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -42,13 +45,26 @@ public class ZmInvocationHandler implements InvocationHandler {
     if (rpcResponse.isStatus()) {
       // 成功
       Object data = rpcResponse.getData();
-      if (!(data
-          instanceof
-          JSONObject)) { // 如果 fast-json 没有将 Response 反序列化为 JSONObject，直接返回，使用于原生类型，String 等
-        return data;
+
+      if (data instanceof JSONObject jsonResult) {
+        // 反序列化后为一个 JSONObject，并非预期的类型，需进行类型转换
+        return jsonResult.toJavaObject(method.getReturnType());
+      } else if (data instanceof JSONArray jsonArray) {
+        Object[] array = jsonArray.toArray();
+
+        Class<?> componentType = method.getReturnType().getComponentType(); // 数组元素的类型
+        System.out.println("componentType => " + componentType.getCanonicalName());
+        Object resultArray = Array.newInstance(componentType, array.length); // 创建预期类型的数组
+
+        for (int i = 0; i < array.length; i++) {
+          Array.set(resultArray, i, array[i]); // 通过反射为数组元素赋值
+        }
+
+        return resultArray;
+      } else {
+        // fast-json 没有将 Response 反序列化为 JSONObject，适用于原生类型，String 等
+        return TypeUtils.cast(data, method.getReturnType());
       }
-      JSONObject jsonResult = (JSONObject) data; // 反序列化后为一个 JSONObject，并非预期的类型
-      return jsonResult.toJavaObject(method.getReturnType()); // 数据类型转换
     } else {
       // 异常
       Exception ex = rpcResponse.getEx();

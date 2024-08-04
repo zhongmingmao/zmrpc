@@ -14,6 +14,7 @@ import me.zhongmingmao.zmrpc.core.api.RpcRequest;
 import me.zhongmingmao.zmrpc.core.api.RpcResponse;
 import me.zhongmingmao.zmrpc.core.meta.ProviderMeta;
 import me.zhongmingmao.zmrpc.core.util.MethodUtils;
+import me.zhongmingmao.zmrpc.core.util.TypeUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.LinkedMultiValueMap;
@@ -65,7 +66,10 @@ public class ProviderBootstrap implements ApplicationContextAware {
       ProviderMeta meta = findProviderMeta(metas, request.getMethodSign());
 
       Method method = meta.getMethod();
-      Object result = method.invoke(meta.getServiceImpl(), request.getArgs());
+
+      // 处理成方法预期的类型
+      Object[] args = processArgs(request.getArgs(), method.getParameterTypes());
+      Object result = method.invoke(meta.getServiceImpl(), args);
 
       response.setStatus(true);
       response.setData(result);
@@ -78,6 +82,19 @@ public class ProviderBootstrap implements ApplicationContextAware {
     }
 
     return response;
+  }
+
+  private Object[] processArgs(Object[] args, Class<?>[] parameterTypes) {
+    if (args == null || args.length == 0) {
+      return args;
+    }
+
+    Object[] actuals = new Object[args.length];
+    for (int i = 0; i < args.length; i++) {
+      actuals[i] = TypeUtils.cast(args[i], parameterTypes[i]);
+    }
+
+    return actuals;
   }
 
   private ProviderMeta findProviderMeta(List<ProviderMeta> metas, String methodSign) {

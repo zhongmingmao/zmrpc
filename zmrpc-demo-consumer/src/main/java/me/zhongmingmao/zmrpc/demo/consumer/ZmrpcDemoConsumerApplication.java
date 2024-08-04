@@ -1,5 +1,6 @@
 package me.zhongmingmao.zmrpc.demo.consumer;
 
+import java.util.Arrays;
 import me.zhongmingmao.zmrpc.core.annotation.ZmConsumer;
 import me.zhongmingmao.zmrpc.core.consumer.ConsumerConfig;
 import me.zhongmingmao.zmrpc.demo.api.Order;
@@ -43,14 +44,29 @@ public class ZmrpcDemoConsumerApplication {
       //      Order order404 = orderService.findById(404);
       //      System.out.println("rpc result, order404 = " + order404);
 
-      int userGetId = userService.getId(3);
-      System.out.println("rpc result, userGetId = " + userGetId);
+      long userGetId1 = userService.getId(3L);
+      System.out.println("rpc result, userGetId1 = " + userGetId1);
+
+      long userGetId2 = userService.getId(new User(4, "JJ"));
+      System.out.println("rpc result, userGetId2 = " + userGetId2);
+
+      long userGetId3 = userService.getId(7.1f);
+      System.out.println("rpc result, userGetId3 = " + userGetId3);
 
       String name1 = userService.getName();
       System.out.println("rpc result, name1 = " + name1);
 
       String name2 = userService.getName(99);
       System.out.println("rpc result, name2 = " + name2);
+
+      int[] ids1 = userService.getIds();
+      System.out.println("rpc result, ids1 = " + Arrays.toString(ids1));
+
+      long[] longIds = userService.getLongIds();
+      System.out.println("rpc result, longIds = " + Arrays.toString(longIds));
+
+      int[] ids2 = userService.getIds(new int[] {7, 8, 9});
+      System.out.println("rpc result, ids2 = " + Arrays.toString(ids2));
 
       //      orderService.toString();
       //      orderService.hashCode();
