@@ -37,13 +37,23 @@ public class ZmrpcDemoProviderApplication {
   @Bean
   ApplicationRunner providerRun() {
     return args -> {
-      RpcRequest request = new RpcRequest();
-      request.setService("me.zhongmingmao.zmrpc.demo.api.UserService");
-      request.setMethod("findById");
-      request.setArgs(new Object[] {100});
+      // test 1
+      RpcRequest request1 = new RpcRequest();
+      request1.setService("me.zhongmingmao.zmrpc.demo.api.UserService");
+      request1.setMethodSign("findById@1_int");
+      request1.setArgs(new Object[] {100});
 
-      RpcResponse response = invoke(request);
-      System.out.println(response.getData());
+      RpcResponse response1 = invoke(request1);
+      System.out.println(response1.getData());
+
+      // test 2
+      RpcRequest request2 = new RpcRequest();
+      request2.setService("me.zhongmingmao.zmrpc.demo.api.UserService");
+      request2.setMethodSign("findById@2_int_java.lang.String");
+      request2.setArgs(new Object[] {100, "AA"});
+
+      RpcResponse response2 = invoke(request2);
+      System.out.println(response2.getData());
     };
   }
 }

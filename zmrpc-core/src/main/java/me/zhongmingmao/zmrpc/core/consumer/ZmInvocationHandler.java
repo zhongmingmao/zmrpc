@@ -10,6 +10,7 @@ import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import me.zhongmingmao.zmrpc.core.api.RpcRequest;
 import me.zhongmingmao.zmrpc.core.api.RpcResponse;
+import me.zhongmingmao.zmrpc.core.util.MethodUtils;
 import okhttp3.*;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -25,15 +26,14 @@ public class ZmInvocationHandler implements InvocationHandler {
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     // 服务挡板
-    String name = method.getName();
-    if (name.equals("toString") || name.equals("hashCode") || name.equals("equals")) {
+    if (MethodUtils.checkLocalMethod(method)) {
       // TBD，请求不发送到 Provider
       return null;
     }
 
     RpcRequest request = new RpcRequest();
     request.setService(service.getCanonicalName()); // service 为被 @ZmConsumer 修饰的字段的类型
-    request.setMethod(method.getName());
+    request.setMethodSign(MethodUtils.methodSign(method)); // 计算方法签名
     request.setArgs(args);
 
     RpcResponse rpcResponse = post(request);

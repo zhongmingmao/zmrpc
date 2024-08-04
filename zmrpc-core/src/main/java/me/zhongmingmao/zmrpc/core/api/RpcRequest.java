@@ -8,6 +8,6 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RpcRequest {
   String service; // me.zhongmingmao.zmrpc.demo.api.UserService
-  String method; // findById
+  String methodSign; // findById
   Object[] args; // 0
 }

@@ -34,6 +34,9 @@ public class ZmrpcDemoConsumerApplication {
       User user = userService.findById(1);
       System.out.println("rpc result, user = " + user);
 
+      User user1 = userService.findById(1, "tom");
+      System.out.println("rpc result, user1 = " + user1);
+
       Order order = orderService.findById(2);
       System.out.println("rpc result, order = " + order);
 
@@ -43,8 +46,11 @@ public class ZmrpcDemoConsumerApplication {
       int userGetId = userService.getId(3);
       System.out.println("rpc result, userGetId = " + userGetId);
 
-      String name = userService.getName();
-      System.out.println("rpc result, name = " + name);
+      String name1 = userService.getName();
+      System.out.println("rpc result, name1 = " + name1);
+
+      String name2 = userService.getName(99);
+      System.out.println("rpc result, name2 = " + name2);
 
       //      orderService.toString();
       //      orderService.hashCode();
