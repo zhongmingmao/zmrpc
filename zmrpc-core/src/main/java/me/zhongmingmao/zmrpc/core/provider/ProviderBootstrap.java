@@ -3,6 +3,7 @@ package me.zhongmingmao.zmrpc.core.provider;
 import jakarta.annotation.PostConstruct;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,15 +37,18 @@ public class ProviderBootstrap implements ApplicationContextAware {
   }
 
   private void genInterface(Object provider) {
-    Class<?> service = provider.getClass().getInterfaces()[0];
-
-    Method[] methods = service.getMethods();
-    for (Method method : methods) {
-      if (MethodUtils.checkLocalMethod(method)) {
-        continue;
-      }
-      createProvider(service, provider, method);
-    }
+    Class<?>[] interfaces = provider.getClass().getInterfaces();
+    Arrays.stream(interfaces)
+        .forEach(
+            service -> {
+              Method[] methods = service.getMethods();
+              for (Method method : methods) {
+                if (MethodUtils.checkLocalMethod(method)) {
+                  continue;
+                }
+                createProvider(service, provider, method);
+              }
+            });
   }
 
   private void createProvider(Class<?> service, Object provider, Method method) {
