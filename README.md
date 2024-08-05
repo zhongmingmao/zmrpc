@@ -787,8 +787,6 @@ public interface UserService {
 rpc result, ids = null
 ```
 
-![Untitled](%E5%A4%A9%E5%B7%A5%20-%2002%2072fda57b86764791b9ec89deab184666/Untitled%204.png)
-
 > 兼容处理 JSONArray - 借助 Array 工具类
 >
 
