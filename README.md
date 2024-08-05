@@ -27,8 +27,8 @@
     - [返回值为 long](#返回值为-long)
     - [参数为对象](#参数为对象)
     - [参数为 float](#参数为-float)
-    - [返回值为 int[]](#返回值为-int)
-    - [参数为 int[]](#参数为-int)
+    - [返回值为 int 数组](#返回值为-int-数组)
+    - [参数为 int 数组](#参数为-int-数组)
     - [返回值为 List](#返回值为-list)
     - [返回值为 Map](#返回值为-map)
   - [服务挡板](#服务挡板)
@@ -770,7 +770,7 @@ public interface UserService {
 > 处理方式同上
 >
 
-### 返回值为 int[]
+### 返回值为 int 数组
 
 ```java
 public interface UserService {
@@ -786,6 +786,8 @@ public interface UserService {
 ===> resJson = {"status":true,"data":[1,2,3],"ex":null}
 rpc result, ids = null
 ```
+
+![Untitled](%E5%A4%A9%E5%B7%A5%20-%2002%2072fda57b86764791b9ec89deab184666/Untitled%204.png)
 
 > 兼容处理 JSONArray - 借助 Array 工具类
 >
@@ -825,7 +827,7 @@ rpc result, ids = null
   }
 ```
 
-### 参数为 int[]
+### 参数为 int 数组
 
 ```java
 public interface UserService {
@@ -873,7 +875,7 @@ rpc result, ids2 = null
   }
 ```
 
-### 返回值为 List<T>
+### 返回值为 List
 
 ```java
 public interface UserService {
@@ -931,7 +933,7 @@ actualType ==> class me.zhongmingmao.zmrpc.demo.api.User
 rpc result, list = [User(id=1, name=zhongmingmao)]
 ```
 
-### 返回值为 Map<K,V>
+### 返回值为 Map
 
 ```java
 public interface UserService {
