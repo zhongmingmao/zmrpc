@@ -29,6 +29,8 @@
     - [参数为 float](#参数为-float)
     - [返回值为 int[]](#返回值为-int)
     - [参数为 int[]](#参数为-int)
+    - [返回值为 List](#返回值为-list)
+    - [返回值为 Map](#返回值为-map)
   - [服务挡板](#服务挡板)
     - [Consumer](#consumer-1)
     - [Provider](#provider-1)
@@ -869,6 +871,124 @@ rpc result, ids2 = null
 
     return null;
   }
+```
+
+### 返回值为 List<T>
+
+```java
+public interface UserService {
+  List<User> getList(List<User> users);
+}
+```
+
+> fast-json 反序列化响应时，同样会反序列化为 JSONArray
+>
+
+> List 是泛型类型，而 Java 是伪泛型
+>
+
+```java
+    // 需进行数据类型转换
+    Class<?> returnType = method.getReturnType();
+    if (rpcResponse.isStatus()) {
+      // 成功
+      Object data = rpcResponse.getData();
+
+      if (data instanceof JSONObject jsonResult) {
+        // 反序列化后为一个 JSONObject，并非预期的类型，需进行类型转换
+        return jsonResult.toJavaObject(returnType);
+      } else if (data instanceof JSONArray jsonArray) {
+					...
+        } else if (List.class.isAssignableFrom(returnType)) { // 返回值为 List 类型
+          List<Object> resultList = new ArrayList<>(array.length);
+          Type genericReturnType = method.getGenericReturnType(); // 获取泛型类型
+          // java.util.List<me.zhongmingmao.zmrpc.demo.api.User>
+          System.out.println("genericReturnType ==> " + genericReturnType);
+          if (genericReturnType instanceof ParameterizedType parameterizedType) { // 参数化类型
+            Type actualType = parameterizedType.getActualTypeArguments()[0];
+            // class me.zhongmingmao.zmrpc.demo.api.User
+            System.out.println("actualType ==> " + actualType);
+            for (Object o : array) {
+              resultList.add(TypeUtils.cast(o, (Class<?>) actualType));
+            }
+          } else {
+            resultList.add(Arrays.asList(array));
+          }
+          return resultList;
+        } else {
+          return null;
+        }
+```
+
+> 请求日志
+>
+
+```java
+===> reqJson = {"args":[[{"id":1,"name":"zhongmingmao"}]],"methodSign":"getList@1_java.util.List","service":"me.zhongmingmao.zmrpc.demo.api.UserService"}
+===> resJson = {"status":true,"data":[{"id":1,"name":"zhongmingmao"}],"ex":null}
+genericReturnType ==> java.util.List<me.zhongmingmao.zmrpc.demo.api.User>
+actualType ==> class me.zhongmingmao.zmrpc.demo.api.User
+rpc result, list = [User(id=1, name=zhongmingmao)]
+```
+
+### 返回值为 Map<K,V>
+
+```java
+public interface UserService {
+  Map<String, User> getMap(Map<String, User> users);
+}
+```
+
+> 响应会被反序列化为 JSONObject
+>
+
+> Map 也是泛型类型，而 Java 是伪泛型
+>
+
+```java
+      Object data = rpcResponse.getData();
+
+      if (data instanceof JSONObject jsonResult) {
+        if (Map.class.isAssignableFrom(returnType)) { // 返回值为 Map 类型
+          Map<Object, Object> resultMap = new HashMap<>();
+          Type genericReturnType = method.getGenericReturnType();
+          // genericReturnType ==> java.util.Map<java.lang.String,
+          // me.zhongmingmao.zmrpc.demo.api.User>
+          System.out.println("genericReturnType ==> " + genericReturnType);
+          if (genericReturnType instanceof ParameterizedType parameterizedType) {
+            Type[] actualTypes = parameterizedType.getActualTypeArguments();
+            Class<?> keyType = (Class<?>) actualTypes[0];
+            Class<?> valueType = (Class<?>) actualTypes[1];
+            // class java.lang.String
+            System.out.println("keyType ==> " + keyType);
+            // class me.zhongmingmao.zmrpc.demo.api.User
+            System.out.println("valueType ==> " + valueType);
+            jsonResult.forEach(
+                (k, v) -> {
+                  Object key = TypeUtils.cast(k, keyType);
+                  Object value = TypeUtils.cast(v, valueType);
+                  resultMap.put(key, value);
+                });
+          }
+          return resultMap;
+        }
+
+        // 反序列化后为一个 JSONObject，并非预期的类型，需进行类型转换
+        return jsonResult.toJavaObject(returnType);
+      } else if (data instanceof JSONArray jsonArray) {
+      ...
+```
+
+> 请求日志
+>
+
+```java
+===> reqJson = {"args":[{"zhongmingmao":{"id":1,"name":"zhongmingmao"}}],"methodSign":"getMap@1_java.util.Map","service":"me.zhongmingmao.zmrpc.demo.api.UserService"}
+===> resJson = {"status":true,"data":{"zhongmingmao":{"id":1,"name":"zhongmingmao"}},"ex":null}
+genericReturnType ==> java.util.Map<java.lang.String, me.zhongmingmao.zmrpc.demo.api.User>
+keyType ==> class java.lang.String
+valueType ==> class me.zhongmingmao.zmrpc.demo.api.User
+rpc result, userMap = {zhongmingmao=User(id=1, name=zhongmingmao)}
 ```
 
 ## 服务挡板
