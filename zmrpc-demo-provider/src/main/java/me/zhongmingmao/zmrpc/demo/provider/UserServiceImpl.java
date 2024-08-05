@@ -1,5 +1,7 @@
 package me.zhongmingmao.zmrpc.demo.provider;
 
+import java.util.List;
+import java.util.Map;
 import me.zhongmingmao.zmrpc.core.annotation.ZmProvider;
 import me.zhongmingmao.zmrpc.demo.api.User;
 import me.zhongmingmao.zmrpc.demo.api.UserService;
@@ -57,5 +59,15 @@ public class UserServiceImpl implements UserService {
   @Override
   public int[] getIds(int[] ids) {
     return ids;
+  }
+
+  @Override
+  public List<User> getList(List<User> users) {
+    return users;
+  }
+
+  @Override
+  public Map<String, User> getMap(Map<String, User> users) {
+    return users;
   }
 }

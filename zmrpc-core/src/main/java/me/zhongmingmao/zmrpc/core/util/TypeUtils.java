@@ -22,6 +22,11 @@ public class TypeUtils {
       return origin;
     }
 
+    // JSONObject
+    if (origin instanceof JSONObject jsonObject) {
+      return jsonObject.toJavaObject(type);
+    }
+
     // LinkedHashMap
     if (origin instanceof HashMap map) {
       JSONObject jsonObject = new JSONObject(map);

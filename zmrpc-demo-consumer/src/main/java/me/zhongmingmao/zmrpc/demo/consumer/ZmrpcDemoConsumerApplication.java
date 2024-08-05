@@ -1,6 +1,6 @@
 package me.zhongmingmao.zmrpc.demo.consumer;
 
-import java.util.Arrays;
+import java.util.*;
 import me.zhongmingmao.zmrpc.core.annotation.ZmConsumer;
 import me.zhongmingmao.zmrpc.core.consumer.ConsumerConfig;
 import me.zhongmingmao.zmrpc.demo.api.Order;
@@ -67,6 +67,14 @@ public class ZmrpcDemoConsumerApplication {
 
       int[] ids2 = userService.getIds(new int[] {7, 8, 9});
       System.out.println("rpc result, ids2 = " + Arrays.toString(ids2));
+
+      List<User> userList = new ArrayList<>();
+      userList.add(User.builder().id(1).name("zhongmingmao").build());
+      System.out.println("rpc result, userList = " + userService.getList(userList));
+
+      Map<String, User> userMap = new HashMap<>();
+      userMap.put("zhongmingmao", User.builder().id(1).name("zhongmingmao").build());
+      System.out.println("rpc result, userMap = " + userService.getMap(userMap));
 
       //      orderService.toString();
       //      orderService.hashCode();
