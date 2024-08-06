@@ -1,30 +1,26 @@
 package me.zhongmingmao.zmrpc.core.consumer;
 
-import lombok.AccessLevel;
-import lombok.Setter;
-import lombok.experimental.FieldDefaults;
-import me.zhongmingmao.zmrpc.core.annotation.ZmConsumer;
-import me.zhongmingmao.zmrpc.core.api.LoadBalancer;
-import me.zhongmingmao.zmrpc.core.api.Router;
-import me.zhongmingmao.zmrpc.core.api.RpcContext;
-import org.apache.logging.log4j.util.Strings;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.EnvironmentAware;
-import org.springframework.core.env.Environment;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.AccessLevel;
+import lombok.Setter;
+import lombok.experimental.FieldDefaults;
+import me.zhongmingmao.zmrpc.core.annotation.ZmConsumer;
+import me.zhongmingmao.zmrpc.core.api.LoadBalancer;
+import me.zhongmingmao.zmrpc.core.api.RegistryCenter;
+import me.zhongmingmao.zmrpc.core.api.Router;
+import me.zhongmingmao.zmrpc.core.api.RpcContext;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAware {
+public class ConsumerBootstrap implements ApplicationContextAware {
 
   @Setter ApplicationContext applicationContext;
-  @Setter Environment environment;
 
   Map<String, Object> stub = new HashMap<>();
 
@@ -36,11 +32,7 @@ public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAw
     LoadBalancer loadBalancer = applicationContext.getBean(LoadBalancer.class);
     RpcContext rpcContext = RpcContext.builder().router(router).loadBalancer(loadBalancer).build();
 
-    String urls = environment.getProperty("zmrpc.providers", "");
-    if (Strings.isEmpty(urls)) {
-      System.err.println("zmrpc.providers is empty.");
-    }
-    String[] providers = urls.split(",");
+    RegistryCenter registryCenter = applicationContext.getBean(RegistryCenter.class);
 
     String[] names = applicationContext.getBeanDefinitionNames();
     for (String name : names) {
@@ -56,7 +48,8 @@ public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAw
               Class<?> service = field.getType();
               String serviceName = service.getCanonicalName();
               if (!stub.containsKey(serviceName)) {
-                Object consumer = createConsumer(service, rpcContext, List.of(providers)); // 生成动态代理
+                Object consumer =
+                    createConsumerFromRegistry(service, rpcContext, registryCenter); // 生成动态代理
                 field.setAccessible(true);
                 field.set(bean, consumer);
               }
@@ -65,6 +58,13 @@ public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAw
             }
           });
     }
+  }
+
+  private Object createConsumerFromRegistry(
+      Class<?> service, RpcContext rpcContext, RegistryCenter registryCenter) {
+    String serviceName = service.getCanonicalName();
+    List<String> providers = registryCenter.fetchAll(serviceName);
+    return createConsumer(service, rpcContext, providers);
   }
 
   // service 为被 @ZmConsumer 修饰的字段的类型
