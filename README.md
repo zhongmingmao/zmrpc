@@ -29,6 +29,7 @@
     - [参数为 float](#参数为-float)
     - [返回值为 int 数组](#返回值为-int-数组)
     - [参数为 int 数组](#参数为-int-数组)
+    - [对象数组](#对象数组)
     - [返回值为 List](#返回值为-list)
     - [返回值为 Map](#返回值为-map)
   - [服务挡板](#服务挡板)
@@ -885,6 +886,59 @@ rpc result, ids2 = null
 
     return null;
   }
+```
+
+### 对象数组
+
+```java
+public interface UserService {
+  User[] getArray(User[] users);
+}
+```
+
+> TypeUtils
+> 
+
+```java
+    // Array
+    if (type.isArray()) {
+      // 会 fast-json 被反序列化为 ArrayList
+      if (origin instanceof List list) {
+        int length = list.size();
+        Class<?> componentType = type.getComponentType();
+        System.out.println("componentType => " + componentType.getCanonicalName());
+        Object resultArray = Array.newInstance(componentType, length);
+
+        for (int i = 0; i < length; i++) {
+          Object component = list.get(i);
+          if (!componentType.isPrimitive() && !componentType.getPackageName().startsWith("java")) {
+            component = cast(component, componentType);
+          }
+          Array.set(resultArray, i, component);
+        }
+        return resultArray;
+      }
+    }
+```
+
+> ZmInvocationHandler
+> 
+
+```java
+        if (returnType.isArray()) { // 返回值为数组类型
+          Class<?> componentType = returnType.getComponentType(); // 数组元素的类型
+          System.out.println("componentType => " + componentType.getCanonicalName());
+          Object resultArray = Array.newInstance(componentType, array.length); // 创建预期类型的数组
+          for (int i = 0; i < array.length; i++) {
+            Object component = array[i];
+            if (!componentType.isPrimitive()
+                && !componentType.getPackageName().startsWith("java")) {
+              component = TypeUtils.cast(component, componentType);
+            }
+            Array.set(resultArray, i, component); // 通过反射为数组元素赋值
+          }
+          return resultArray;
+        } else if (List.class.isAssignableFrom(returnType)) { // 返回值为 List 类型
 ```
 
 ### 返回值为 List
