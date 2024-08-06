@@ -5,4 +5,4 @@ server:
   port: 8080
 
 zmrpc:
-  providers: http://127.0.0.1:8081/,http://127.0.0.1:8082/
+  providers: http://127.0.0.1:8081/,http://127.0.0.1:8082/,http://127.0.0.1:8083/

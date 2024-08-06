@@ -38,6 +38,20 @@
     - [方法签名](#方法签名)
     - [Provider](#provider-2)
     - [Consumer](#consumer-2)
+- [负载均衡](#负载均衡)
+  - [接口定义](#接口定义)
+    - [LoadBalancer](#loadbalancer)
+    - [Router](#router)
+    - [Filter](#filter)
+  - [RpcContext](#rpccontext)
+  - [Consumer](#consumer-3)
+    - [Spring Bean](#spring-bean)
+    - [Providers](#providers)
+    - [Inject](#inject)
+    - [Invoke](#invoke)
+  - [LoadBalancer](#loadbalancer-1)
+    - [Random](#random)
+    - [RoundRobin](#roundrobin)
 
 # 服务提供者
 
@@ -1199,5 +1213,245 @@ public class ProviderBootstrap implements ApplicationContextAware {
     request.setMethodSign(MethodUtils.methodSign(method)); // 计算方法签名
     request.setArgs(args);
 		...
+  }
+```
+
+# 负载均衡
+
+## 接口定义
+
+### LoadBalancer
+
+```java
+public interface Router<T> {
+
+  /** 从一个大集合中筛选出一个小集合，适用于分区亲和性等场景 */
+  List<T> route(List<T> providers);
+
+  Router Default = p -> p;
+}
+```
+
+### Router
+
+```java
+public interface Router {
+
+  /** 从一个大集合中筛选出一个小集合，适用于分区亲和性等场景 */
+  List<String> route(List<String> providers);
+
+  Router Default = p -> p;
+}
+```
+
+### Filter
+
+> 暂时用不到，占位
+>
+
+```java
+public interface Filter {}
+```
+
+## RpcContext
+
+> 封装用于负载均衡的上下文
+>
+
+```java
+@Data
+@Builder
+public class RpcContext {
+  List<Filter> filters;
+  Router router;
+  LoadBalancer loadBalancer;
+}
+```
+
+## Consumer
+
+### Spring Bean
+
+```java
+@Configuration
+public class ConsumerConfig {
+
+	...
+
+  @Bean
+  public LoadBalancer loadBalancer() {
+    return LoadBalancer.Default;
+  }
+
+  @Bean
+  public Router router() {
+    return Router.Default;
+  }
+}
+```
+
+### Providers
+
+> 暂未实现注册中心，先写在 application.yaml 中
+>
+
+```yaml
+zmrpc:
+  providers: http://127.0.0.1:8081/,http://127.0.0.1:8082/
+```
+
+### Inject
+
+> 在 ConsumerBootstrap#start
+1. 通过 ApplicationContext 获取 LoadBalancer 和 Router 的 Spring Bean
+2. 通过 EnvironmentAware 获取 Environment，进而获取本地配置的 Provider 列表
+>
+
+```java
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAware {
+
+  @Setter ApplicationContext applicationContext;
+  @Setter Environment environment;
+
+  // 主要目的 - 为 @ZmConsumer 字段赋值 - 动态生成代理类，模拟 HTTP 请求
+  // 通过 ApplicationRunner 调用，此时 ApplicationContext 已完全就绪
+  public void start() {
+
+    Router router = applicationContext.getBean(Router.class);
+    LoadBalancer loadBalancer = applicationContext.getBean(LoadBalancer.class);
+    RpcContext rpcContext = RpcContext.builder().router(router).loadBalancer(loadBalancer).build();
+
+    String urls = environment.getProperty("zmrpc.providers", "");
+    if (Strings.isEmpty(urls)) {
+      System.err.println("zmrpc.providers is empty.");
+    }
+    String[] providers = urls.split(",");
+
+		            ...
+                Object consumer = createConsumer(service, rpcContext, List.of(providers)); // 生成动态代理
+								...
+    }
+  }
+
+  // service 为被 @ZmConsumer 修饰的字段的类型
+  private Object createConsumer(Class<?> service, RpcContext rpcContext, List<String> providers) {
+    return Proxy.newProxyInstance(
+        service.getClassLoader(),
+        new Class[] {service},
+        new ZmInvocationHandler(service, rpcContext, providers));
+  }
+  ...
+}
+
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class ZmInvocationHandler implements InvocationHandler {
+
+  Class<?> service;
+  RpcContext rpcContext;
+  List<String> providers;
+
+  public ZmInvocationHandler(Class<?> service, RpcContext rpcContext, List<String> providers) {
+    this.service = service;
+    this.rpcContext = rpcContext;
+    this.providers = providers;
+  }
+  ...
+ }
+```
+
+### Invoke
+
+> 在 ZmInvocationHandler 中使用新注入的上下文进行负载均衡 - *Router → LoadBalancer*
+>
+
+```java
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class ZmInvocationHandler implements InvocationHandler {
+
+  Class<?> service;
+  RpcContext rpcContext;
+  List<String> providers;
+
+  ...
+  
+  @Override
+  public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+	  ...
+    List<String> urls = rpcContext.getRouter().route(providers);
+    String url = (String) rpcContext.getLoadBalancer().choose(urls);
+    System.out.println("select ==> " + url);
+    RpcResponse rpcResponse = post(request, url);
+    ...
+  }
+  
+  ...
+  
+  private RpcResponse post(RpcRequest rpcRequest, String url) {
+    // 序列化请求
+    String reqJson = JSON.toJSONString(rpcRequest);
+
+    Request request =
+        new Request.Builder().url(url).post(RequestBody.create(reqJson, APPLICATION_JSON)).build();
+		...
+  }
+```
+
+## LoadBalancer
+
+### Random
+
+```java
+public class RandomLoadBalancer<T> implements LoadBalancer<T> {
+
+  Random random = new Random();
+
+  @Override
+  public T choose(List<T> providers) {
+    if (providers == null || providers.size() == 0) {
+      return null;
+    }
+
+    return providers.get(random.nextInt(providers.size()));
+  }
+}
+```
+
+> Spring Bean
+>
+
+```java
+  @Bean
+  public LoadBalancer loadBalancer() {
+    return new RandomLoadBalancer();
+  }
+```
+
+### RoundRobin
+
+```java
+public class RoundRobinLoadBalancer<T> implements LoadBalancer<T> {
+
+  AtomicInteger index = new AtomicInteger(0);
+
+  @Override
+  public T choose(List<T> providers) {
+    if (providers == null || providers.size() == 0) {
+      return null;
+    }
+
+    // 按位与 - 防止溢出
+    return providers.get((index.getAndIncrement() & 0x7FFFFFFF) % providers.size());
+  }
+}
+```
+
+> Spring Bean
+>
+
+```java
+  @Bean
+  public LoadBalancer loadBalancer() {
+    return new RoundRobinLoadBalancer();
   }
 ```
