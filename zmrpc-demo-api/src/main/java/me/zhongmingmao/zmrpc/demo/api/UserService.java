@@ -25,6 +25,8 @@ public interface UserService {
 
   int[] getIds(int[] ids);
 
+  User[] getArray(User[] users);
+
   List<User> getList(List<User> users);
 
   Map<String, User> getMap(Map<String, User> users);

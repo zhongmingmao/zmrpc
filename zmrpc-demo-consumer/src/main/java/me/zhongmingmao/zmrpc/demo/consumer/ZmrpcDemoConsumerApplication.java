@@ -76,6 +76,10 @@ public class ZmrpcDemoConsumerApplication {
       int[] ids2 = userService.getIds(new int[] {7, 8, 9});
       System.out.println("rpc result, ids2 = " + Arrays.toString(ids2));
 
+      User[] userArray = new User[] {User.builder().id(1).name("zhongmingmao").build()};
+      System.out.println(
+          "rpc result, userArray = " + Arrays.toString(userService.getArray(userArray)));
+
       List<User> userList = new ArrayList<>();
       userList.add(User.builder().id(1).name("zhongmingmao").build());
       System.out.println("rpc result, userList = " + userService.getList(userList));

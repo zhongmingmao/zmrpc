@@ -43,7 +43,11 @@ public class TypeUtils {
         Object resultArray = Array.newInstance(componentType, length);
 
         for (int i = 0; i < length; i++) {
-          Array.set(resultArray, i, list.get(i));
+          Object component = list.get(i);
+          if (!componentType.isPrimitive() && !componentType.getPackageName().startsWith("java")) {
+            component = cast(component, componentType);
+          }
+          Array.set(resultArray, i, component);
         }
         return resultArray;
       }

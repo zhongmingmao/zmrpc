@@ -87,7 +87,12 @@ public class ZmInvocationHandler implements InvocationHandler {
           System.out.println("componentType => " + componentType.getCanonicalName());
           Object resultArray = Array.newInstance(componentType, array.length); // 创建预期类型的数组
           for (int i = 0; i < array.length; i++) {
-            Array.set(resultArray, i, array[i]); // 通过反射为数组元素赋值
+            Object component = array[i];
+            if (!componentType.isPrimitive()
+                && !componentType.getPackageName().startsWith("java")) {
+              component = TypeUtils.cast(component, componentType);
+            }
+            Array.set(resultArray, i, component); // 通过反射为数组元素赋值
           }
           return resultArray;
         } else if (List.class.isAssignableFrom(returnType)) { // 返回值为 List 类型
