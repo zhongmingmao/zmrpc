@@ -14,17 +14,20 @@ public class ZkRegistry implements RegistryCenter {
 
   @Override
   public void start() {
+    System.out.println("zk client start");
     RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
     client =
         CuratorFrameworkFactory.builder()
-            .connectString("127.0.0.1:2181")
+            .connectString("arch:2181")
             .namespace("zmrpc")
             .retryPolicy(retryPolicy)
             .build();
+    client.start();
   }
 
   @Override
   public void stop() {
+    System.out.println("zk client stop");
     client.close();
   }
 
@@ -41,6 +44,7 @@ public class ZkRegistry implements RegistryCenter {
       // instance 注册为临时节点 - 不断变化
       String instancePath = servicePath + "/" + instance;
       if (client.checkExists().forPath(instancePath) == null) {
+        System.out.println("===> register to zk, instancePath: " + instancePath);
         client.create().withMode(CreateMode.EPHEMERAL).forPath(instancePath, "provider".getBytes());
       }
     } catch (Exception e) {
@@ -64,6 +68,7 @@ public class ZkRegistry implements RegistryCenter {
         return;
       }
 
+      System.out.println("===> unregister from zk, instancePath: " + instancePath);
       client.delete().quietly().forPath(instancePath); // 删除 instance
     } catch (Exception e) {
       throw new RuntimeException(e);

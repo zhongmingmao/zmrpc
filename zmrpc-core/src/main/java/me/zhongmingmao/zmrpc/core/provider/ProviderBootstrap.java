@@ -1,21 +1,26 @@
 package me.zhongmingmao.zmrpc.core.provider;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Setter;
+import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;
 import me.zhongmingmao.zmrpc.core.annotation.ZmProvider;
+import me.zhongmingmao.zmrpc.core.api.RegistryCenter;
 import me.zhongmingmao.zmrpc.core.api.RpcRequest;
 import me.zhongmingmao.zmrpc.core.api.RpcResponse;
 import me.zhongmingmao.zmrpc.core.meta.ProviderMeta;
 import me.zhongmingmao.zmrpc.core.util.MethodUtils;
 import me.zhongmingmao.zmrpc.core.util.TypeUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.LinkedMultiValueMap;
@@ -27,13 +32,44 @@ public class ProviderBootstrap implements ApplicationContextAware {
   @Setter ApplicationContext applicationContext;
 
   MultiValueMap<String, ProviderMeta> skeleton = new LinkedMultiValueMap<>();
+  String instance;
+
+  @Value("${server.port}")
+  String port;
 
   @PostConstruct // init-method
-  public void start() {
+  public void init() {
     Map<String, Object> providers = applicationContext.getBeansWithAnnotation(ZmProvider.class);
     providers.values().forEach(this::genInterface);
 
     skeleton.forEach((service, provider) -> System.out.println(service + " -> " + provider));
+  }
+
+  // 由 ApplicationRunner 触发，此时 ApplicationContext 已完全就绪，此时可以接收请求，即延迟注册
+  @SneakyThrows
+  public void start() {
+    // 获取本机 IP
+    String ip = InetAddress.getLocalHost().getHostAddress();
+    instance = ip + "_" + port;
+
+    // 注册服务
+    skeleton.keySet().forEach(this::registerService);
+  }
+
+  @PreDestroy
+  public void stop() {
+    // 反注册服务
+    skeleton.keySet().forEach(this::unregisterService);
+  }
+
+  private void registerService(String service) {
+    RegistryCenter registryCenter = applicationContext.getBean(RegistryCenter.class);
+    registryCenter.register(service, instance); // Spring 上下文尚未完全就绪，服务已经注册上去了，可能会被发现
+  }
+
+  private void unregisterService(String service) {
+    RegistryCenter registryCenter = applicationContext.getBean(RegistryCenter.class);
+    registryCenter.unregister(service, instance);
   }
 
   private void genInterface(Object provider) {
