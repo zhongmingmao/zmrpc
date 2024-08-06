@@ -1,5 +1,8 @@
 package me.zhongmingmao.zmrpc.core.consumer;
 
+import me.zhongmingmao.zmrpc.core.api.LoadBalancer;
+import me.zhongmingmao.zmrpc.core.api.Router;
+import me.zhongmingmao.zmrpc.core.cluster.RoundRobinLoadBalancer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
@@ -23,5 +26,15 @@ public class ConsumerConfig {
       bootstrap.start();
       System.out.println("consumerBootstrapStart end ...");
     };
+  }
+
+  @Bean
+  public LoadBalancer loadBalancer() {
+    return new RoundRobinLoadBalancer();
+  }
+
+  @Bean
+  public Router router() {
+    return Router.Default;
   }
 }

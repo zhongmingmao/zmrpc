@@ -9,8 +9,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
-import me.zhongmingmao.zmrpc.core.api.RpcRequest;
-import me.zhongmingmao.zmrpc.core.api.RpcResponse;
+import me.zhongmingmao.zmrpc.core.api.*;
 import me.zhongmingmao.zmrpc.core.util.MethodUtils;
 import me.zhongmingmao.zmrpc.core.util.TypeUtils;
 import okhttp3.*;
@@ -19,9 +18,13 @@ import okhttp3.*;
 public class ZmInvocationHandler implements InvocationHandler {
 
   Class<?> service;
+  RpcContext rpcContext;
+  List<String> providers;
 
-  public ZmInvocationHandler(Class<?> service) {
+  public ZmInvocationHandler(Class<?> service, RpcContext rpcContext, List<String> providers) {
     this.service = service;
+    this.rpcContext = rpcContext;
+    this.providers = providers;
   }
 
   // 模拟 HTTP 请求
@@ -38,7 +41,10 @@ public class ZmInvocationHandler implements InvocationHandler {
     request.setMethodSign(MethodUtils.methodSign(method)); // 计算方法签名
     request.setArgs(args);
 
-    RpcResponse rpcResponse = post(request);
+    List<String> urls = rpcContext.getRouter().route(providers);
+    String url = (String) rpcContext.getLoadBalancer().choose(urls);
+    System.out.println("select ==> " + url);
+    RpcResponse rpcResponse = post(request, url);
 
     // 需进行数据类型转换
     Class<?> returnType = method.getReturnType();
@@ -125,15 +131,12 @@ public class ZmInvocationHandler implements InvocationHandler {
           .writeTimeout(1, TimeUnit.SECONDS)
           .build();
 
-  private RpcResponse post(RpcRequest rpcRequest) {
+  private RpcResponse post(RpcRequest rpcRequest, String url) {
     // 序列化请求
     String reqJson = JSON.toJSONString(rpcRequest);
 
     Request request =
-        new Request.Builder()
-            .url("http://127.0.0.1:8080/")
-            .post(RequestBody.create(reqJson, APPLICATION_JSON))
-            .build();
+        new Request.Builder().url(url).post(RequestBody.create(reqJson, APPLICATION_JSON)).build();
 
     try {
       System.out.println("===> reqJson = " + reqJson);

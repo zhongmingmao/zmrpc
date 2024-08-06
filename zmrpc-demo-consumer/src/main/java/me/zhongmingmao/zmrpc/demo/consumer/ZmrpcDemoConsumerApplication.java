@@ -12,8 +12,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @SpringBootApplication
+@RestController
 @Import(ConsumerConfig.class)
 public class ZmrpcDemoConsumerApplication {
 
@@ -27,6 +30,11 @@ public class ZmrpcDemoConsumerApplication {
   @ZmConsumer UserService userService; // 远程调用 Provider，需动态生成
 
   @ZmConsumer OrderService orderService;
+
+  @RequestMapping("/")
+  public User invoke(int id) {
+    return userService.findById(id); // 经过 Router 和 LoadBalancer 进行负载均衡
+  }
 
   // ApplicationRunner - 此刻 ApplicationContext 完全就绪
   @Bean

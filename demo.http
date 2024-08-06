@@ -1,5 +1,5 @@
 ### 获取用户信息 1
-POST http://localhost:8080
+POST http://localhost:8080/?id=101
 Content-Type: application/json
 
 {
@@ -11,7 +11,7 @@ Content-Type: application/json
 }
 
 ### 获取用户信息 2
-POST http://localhost:8080
+POST http://localhost:8081
 Content-Type: application/json
 
 {
@@ -24,7 +24,7 @@ Content-Type: application/json
 }
 
 ### mock
-POST http://localhost:8080
+POST http://localhost:8081
 Content-Type: application/json
 
 {
@@ -34,7 +34,7 @@ Content-Type: application/json
 }
 
 ### 获取订单信息
-POST http://localhost:8080
+POST http://localhost:8081
 Content-Type: application/json
 
 {

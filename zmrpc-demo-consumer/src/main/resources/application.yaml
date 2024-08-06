@@ -2,4 +2,7 @@ spring:
   application:
     name: zmrpc-demo-consumer
 server:
-  port: 8088
+  port: 8080
+
+zmrpc:
+  providers: http://127.0.0.1:8081/,http://127.0.0.1:8082/

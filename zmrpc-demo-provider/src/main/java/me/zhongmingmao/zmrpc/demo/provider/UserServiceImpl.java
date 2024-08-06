@@ -5,15 +5,19 @@ import java.util.Map;
 import me.zhongmingmao.zmrpc.core.annotation.ZmProvider;
 import me.zhongmingmao.zmrpc.demo.api.User;
 import me.zhongmingmao.zmrpc.demo.api.UserService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 @ZmProvider
 public class UserServiceImpl implements UserService {
 
+  @Value("${server.port}")
+  String port;
+
   @Override
   public User findById(int id) {
-    return User.builder().id(id).name("zhongmingmao").build();
+    return User.builder().id(id).name("zhongmingmao-" + port).build();
   }
 
   @Override
