@@ -53,6 +53,17 @@
   - [LoadBalancer](#loadbalancer-1)
     - [Random](#random)
     - [RoundRobin](#roundrobin)
+- [注册中心](#注册中心)
+  - [RegistryCenter](#registrycenter)
+  - [Zookeeper](#zookeeper)
+    - [Registry](#registry)
+    - [Provider](#provider-3)
+    - [Consumer](#consumer-4)
+  - [Provider](#provider-4)
+    - [Spring Bean](#spring-bean-1)
+    - [Register](#register)
+  - [Consumer](#consumer-5)
+    - [Spring Bean](#spring-bean-2)
 
 # 服务提供者
 
@@ -1508,4 +1519,299 @@ public class RoundRobinLoadBalancer<T> implements LoadBalancer<T> {
   public LoadBalancer loadBalancer() {
     return new RoundRobinLoadBalancer();
   }
+```
+
+# 注册中心
+
+<aside>
+💡 这里的注册中心指的是在 RPC 过程中在 Provider 和 Consumer 的客户端实现
+
+</aside>
+
+## RegistryCenter
+
+```java
+public interface RegistryCenter {
+  void start(); // for registry
+
+  void stop(); // for registry
+
+  void register(String service, String instance); // for provider
+
+  void unregister(String service, String instance); // for provider
+
+  List<String> fetchAll(String service); // for consumer
+
+  // ChangeListener - 事件监听器，将变化向外传递
+  void subscribe(String service, ChangeListener listener); // for consumer
+}
+```
+
+## Zookeeper
+
+> 目前以 Zookeeper 作为注册中心 - 存储注册信息
+> 
+
+### Registry
+
+> 启动关闭客户端
+> 
+
+```java
+  private CuratorFramework client = null;
+
+  @Override
+  public void start() {
+    System.out.println("zk client start");
+    RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
+    client =
+        CuratorFrameworkFactory.builder()
+            .connectString("arch:2181")
+            .namespace("zmrpc")
+            .retryPolicy(retryPolicy)
+            .build();
+    client.start();
+  }
+
+  @Override
+  public void stop() {
+    System.out.println("zk client stop");
+    client.close();
+  }
+```
+
+### Provider
+
+> 注册 + 反注册
+> 
+
+```java
+  @Override
+  public void register(String service, String instance) {
+    String servicePath = "/" + service;
+
+    try {
+      // service 注册为持久化节点
+      if (client.checkExists().forPath(servicePath) == null) {
+        client.create().withMode(CreateMode.PERSISTENT).forPath(servicePath, "service".getBytes());
+      }
+
+      // instance 注册为临时节点 - 不断变化
+      String instancePath = servicePath + "/" + instance;
+      if (client.checkExists().forPath(instancePath) == null) {
+        System.out.println("===> register to zk, instancePath: " + instancePath);
+        client.create().withMode(CreateMode.EPHEMERAL).forPath(instancePath, "provider".getBytes());
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void unregister(String service, String instance) {
+    String servicePath = "/" + service;
+
+    try {
+      if (client.checkExists().forPath(servicePath) == null) {
+        // service 不存在，直接返回
+        return;
+      }
+
+      String instancePath = servicePath + "/" + instance;
+      if (client.checkExists().forPath(instancePath) == null) {
+        // instance 不存在，直接返回
+        return;
+      }
+
+      System.out.println("===> unregister from zk, instancePath: " + instancePath);
+      client.delete().quietly().forPath(instancePath); // 删除 instance
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+```
+
+### Consumer
+
+```java
+  @Override
+  public List<String> fetchAll(String service) {
+    String servicePath = "/" + service;
+
+    try {
+      // 获取所有子节点
+      List<String> instances = client.getChildren().forPath(servicePath);
+      System.out.printf(
+          "===> fetchAll from zk, servicePath: %s, instances: %s%n", servicePath, instances);
+      return instances;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+```
+
+> **订阅** Provider 数量的变化 - 监听
+> 
+
+```java
+  // 监听 ZK 节点变化，获取当前最新的 Provider 列表，包装成事件，发送出去，实际的 Consumer 再消费
+  @SneakyThrows
+  @Override
+  public void subscribe(String service, ChangeListener listener) {
+    String servicePath = "/" + service;
+    final TreeCache cache = // ZK 在本地的镜像数据缓存，减少交互
+        TreeCache.newBuilder(client, servicePath).setCacheData(true).setMaxDepth(2).build();
+    cache
+        .getListenable()
+        .addListener(
+            (curator, event) -> {
+              // 监听节点变化
+              System.out.println("zk subscribe event: " + event);
+              List<String> nodes = fetchAll(service); // 将最新 Provider 列表通过事件的形式传递出去
+              listener.fire(new Event(nodes));
+            });
+    cache.start();
+  }
+```
+
+## Provider
+
+### Spring Bean
+
+<aside>
+💡 借助 ApplicationRunner **延迟服务注册**，保证 Spring 上下文已完全就绪
+
+</aside>
+
+```java
+@Configuration
+public class ProviderConfig {
+
+  @Bean
+  public ProviderBootstrap providerBootstrap() {
+    return new ProviderBootstrap();
+  }
+
+  // 定义注册中心的启动关闭钩子
+  @Bean(initMethod = "start", destroyMethod = "stop")
+  public RegistryCenter registryCenter() {
+    return new ZkRegistryCenter();
+  }
+
+  @Bean
+  public ApplicationRunner providerBootstrapStart(@Autowired ProviderBootstrap providerBootstrap) {
+    return args -> {
+      System.out.println("providerBootstrapStart start");
+      providerBootstrap.start(); // 延迟注册 - 只有在 Spring 上下文完全就绪后，应用才具备接收请求的能力，此刻才执行注册动作
+      System.out.println("providerBootstrapStart end");
+    };
+  }
+}
+```
+
+### Register
+
+```java
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class ProviderBootstrap implements ApplicationContextAware {
+
+  @Setter ApplicationContext applicationContext;
+
+  MultiValueMap<String, ProviderMeta> skeleton = new LinkedMultiValueMap<>();
+  String instance;
+
+  @Value("${server.port}")
+  String port;
+
+  @PostConstruct // init-method
+  public void init() {
+    Map<String, Object> providers = applicationContext.getBeansWithAnnotation(ZmProvider.class);
+    providers.values().forEach(this::genInterface);
+
+    skeleton.forEach((service, provider) -> System.out.println(service + " -> " + provider));
+  }
+
+  // 由 ApplicationRunner 触发，此时 ApplicationContext 已完全就绪，此时可以接收请求，即延迟注册
+  @SneakyThrows
+  public void start() {
+    // 获取本机 IP
+    String ip = InetAddress.getLocalHost().getHostAddress();
+    instance = ip + "_" + port;
+
+    // 注册服务
+    skeleton.keySet().forEach(this::registerService);
+  }
+
+  @PreDestroy
+  public void stop() {
+    // 反注册服务
+    skeleton.keySet().forEach(this::unregisterService);
+  }
+
+  private void registerService(String service) {
+    RegistryCenter registryCenter = applicationContext.getBean(RegistryCenter.class);
+    registryCenter.register(service, instance); // Spring 上下文尚未完全就绪，服务已经注册上去了，可能会被发现
+  }
+
+  private void unregisterService(String service) {
+    RegistryCenter registryCenter = applicationContext.getBean(RegistryCenter.class);
+    registryCenter.unregister(service, instance);
+  }
+...
+```
+
+## Consumer
+
+### Spring Bean
+
+> 在 Consumer 侧 - 定义注册中心的启动关闭钩子
+> 
+
+```java
+@Configuration
+public class ConsumerConfig {
+
+  // 定义注册中心的启动关闭钩子
+  @Bean(initMethod = "start", destroyMethod = "stop")
+  public RegistryCenter registryCenter() {
+    return new ZkRegistryCenter();
+  }
+}
+```
+
+> Consumer 注册监听器，监听 Provider 变化
+> 
+
+```java
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class ConsumerBootstrap implements ApplicationContextAware {
+...
+  private Object createConsumerFromRegistry(
+      Class<?> service, RpcContext rpcContext, RegistryCenter registryCenter) {
+    String serviceName = service.getCanonicalName();
+
+    List<String> providers = buildProviders(registryCenter.fetchAll(serviceName));
+    System.out.println("===> providers: " + providers);
+
+    // 注册监听器，监听到变化后，修改 Provider 列表
+    registryCenter.subscribe(
+        serviceName,
+        event -> {
+          List<String> changedNodes = event.getData(); // 获取传递出来的事件里面的数据
+          providers.clear();
+          List<String> changedProviders = buildProviders(changedNodes);
+          System.out.println("===> changedProviders: " + changedProviders);
+          providers.addAll(changedProviders);
+        });
+
+    return createConsumer(service, rpcContext, providers);
+  }
+
+  private List<String> buildProviders(List<String> nodes) {
+    return nodes.stream()
+        .map(node -> "http://" + node.replace('_', ':') + "/")
+        .collect(Collectors.toList());
+  }
+...
+}
 ```
