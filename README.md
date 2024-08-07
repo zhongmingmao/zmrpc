@@ -64,6 +64,7 @@
     - [Register](#register)
   - [Consumer](#consumer-5)
     - [Spring Bean](#spring-bean-2)
+    - [Subscribe](#subscribe)
 
 # 服务提供者
 
@@ -1778,6 +1779,8 @@ public class ConsumerConfig {
   }
 }
 ```
+
+### Subscribe
 
 > Consumer 注册监听器，监听 Provider 变化
 > 
