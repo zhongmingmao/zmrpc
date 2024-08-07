@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
@@ -63,8 +64,28 @@ public class ConsumerBootstrap implements ApplicationContextAware {
   private Object createConsumerFromRegistry(
       Class<?> service, RpcContext rpcContext, RegistryCenter registryCenter) {
     String serviceName = service.getCanonicalName();
-    List<String> providers = registryCenter.fetchAll(serviceName);
+
+    List<String> providers = buildProviders(registryCenter.fetchAll(serviceName));
+    System.out.println("===> providers: " + providers);
+
+    // 注册监听器，监听到变化后，修改 Provider 列表
+    registryCenter.subscribe(
+        serviceName,
+        event -> {
+          List<String> changedNodes = event.getData(); // 获取传递出来的事件里面的数据
+          providers.clear();
+          List<String> changedProviders = buildProviders(changedNodes);
+          System.out.println("===> changedProviders: " + changedProviders);
+          providers.addAll(changedProviders);
+        });
+
     return createConsumer(service, rpcContext, providers);
+  }
+
+  private List<String> buildProviders(List<String> nodes) {
+    return nodes.stream()
+        .map(node -> "http://" + node.replace('_', ':') + "/")
+        .collect(Collectors.toList());
   }
 
   // service 为被 @ZmConsumer 修饰的字段的类型

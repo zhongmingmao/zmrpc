@@ -1,14 +1,16 @@
 package me.zhongmingmao.zmrpc.core.registry;
 
 import java.util.List;
+import lombok.SneakyThrows;
 import me.zhongmingmao.zmrpc.core.api.RegistryCenter;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.cache.TreeCache;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
 
-public class ZkRegistry implements RegistryCenter {
+public class ZkRegistryCenter implements RegistryCenter {
 
   private CuratorFramework client = null;
 
@@ -77,6 +79,35 @@ public class ZkRegistry implements RegistryCenter {
 
   @Override
   public List<String> fetchAll(String service) {
-    return null;
+    String servicePath = "/" + service;
+
+    try {
+      // 获取所有子节点
+      List<String> instances = client.getChildren().forPath(servicePath);
+      System.out.printf(
+          "===> fetchAll from zk, servicePath: %s, instances: %s%n", servicePath, instances);
+      return instances;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  // 监听 ZK 节点变化，获取当前最新的 Provider 列表，包装成事件，发送出去，实际的 Consumer 再消费
+  @SneakyThrows
+  @Override
+  public void subscribe(String service, ChangeListener listener) {
+    String servicePath = "/" + service;
+    final TreeCache cache = // ZK 在本地的镜像数据缓存，减少交互
+        TreeCache.newBuilder(client, servicePath).setCacheData(true).setMaxDepth(2).build();
+    cache
+        .getListenable()
+        .addListener(
+            (curator, event) -> {
+              // 监听节点变化
+              System.out.println("zk subscribe event: " + event);
+              List<String> nodes = fetchAll(service); // 将最新 Provider 列表通过事件的形式传递出去
+              listener.fire(new Event(nodes));
+            });
+    cache.start();
   }
 }

@@ -1,6 +1,7 @@
 package me.zhongmingmao.zmrpc.core.api;
 
 import lombok.AllArgsConstructor;
+import me.zhongmingmao.zmrpc.core.registry.ChangeListener;
 
 import java.util.List;
 
@@ -15,7 +16,8 @@ public interface RegistryCenter {
 
   List<String> fetchAll(String service); // for consumer
 
-  //  void subscribe(); // for consumer
+  // ChangeListener - 事件监听器，将变化向外传递
+  void subscribe(String service, ChangeListener listener); // for consumer
 
   @AllArgsConstructor
   class StaticRegistryCenter implements RegistryCenter {
@@ -38,5 +40,8 @@ public interface RegistryCenter {
     public List<String> fetchAll(String service) {
       return providers;
     }
+
+    @Override
+    public void subscribe(String service, ChangeListener listener) {}
   }
 }

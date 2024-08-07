@@ -1,7 +1,7 @@
 package me.zhongmingmao.zmrpc.core.provider;
 
 import me.zhongmingmao.zmrpc.core.api.RegistryCenter;
-import me.zhongmingmao.zmrpc.core.registry.ZkRegistry;
+import me.zhongmingmao.zmrpc.core.registry.ZkRegistryCenter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
@@ -18,7 +18,7 @@ public class ProviderConfig {
   // 定义注册中心的启动关闭钩子
   @Bean(initMethod = "start", destroyMethod = "stop")
   public RegistryCenter registryCenter() {
-    return new ZkRegistry();
+    return new ZkRegistryCenter();
   }
 
   @Bean
