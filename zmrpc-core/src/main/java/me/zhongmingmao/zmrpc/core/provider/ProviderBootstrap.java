@@ -90,8 +90,8 @@ public class ProviderBootstrap implements ApplicationContextAware {
     registryCenter.unregister(buildServiceMeta(service), instance);
   }
 
-  private void genInterface(Object provider) {
-    Class<?>[] interfaces = provider.getClass().getInterfaces();
+  private void genInterface(Object impl) {
+    Class<?>[] interfaces = impl.getClass().getInterfaces();
     Arrays.stream(interfaces)
         .forEach(
             service -> {
@@ -100,17 +100,19 @@ public class ProviderBootstrap implements ApplicationContextAware {
                 if (MethodUtils.checkLocalMethod(method)) {
                   continue;
                 }
-                createProvider(service, provider, method);
+                createProvider(service, impl, method);
               }
             });
   }
 
-  private void createProvider(Class<?> service, Object provider, Method method) {
-    ProviderMeta meta = new ProviderMeta();
-    meta.setMethod(method);
-    meta.setServiceImpl(provider);
-    meta.setMethodSign(MethodUtils.methodSign(method));
-    System.out.println("createProvider, " + meta);
-    skeleton.add(service.getCanonicalName(), meta);
+  private void createProvider(Class<?> service, Object impl, Method method) {
+    ProviderMeta providerMeta =
+        ProviderMeta.builder()
+            .method(method)
+            .serviceImpl(impl)
+            .methodSign(MethodUtils.methodSign(method))
+            .build();
+    System.out.println("createProvider, " + providerMeta);
+    skeleton.add(service.getCanonicalName(), providerMeta);
   }
 }

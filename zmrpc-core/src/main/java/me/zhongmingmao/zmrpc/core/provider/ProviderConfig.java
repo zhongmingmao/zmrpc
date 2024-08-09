@@ -1,7 +1,7 @@
 package me.zhongmingmao.zmrpc.core.provider;
 
 import me.zhongmingmao.zmrpc.core.api.RegistryCenter;
-import me.zhongmingmao.zmrpc.core.registry.ZkRegistryCenter;
+import me.zhongmingmao.zmrpc.core.registry.zk.ZkRegistryCenter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
