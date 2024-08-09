@@ -1,16 +1,14 @@
 package me.zhongmingmao.zmrpc.core.consumer;
 
-import com.alibaba.fastjson.JSON;
-import java.io.IOException;
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import me.zhongmingmao.zmrpc.core.api.*;
+import me.zhongmingmao.zmrpc.core.consumer.http.HttpInvoker;
+import me.zhongmingmao.zmrpc.core.consumer.http.OkHttpInvoker;
 import me.zhongmingmao.zmrpc.core.util.MethodUtils;
 import me.zhongmingmao.zmrpc.core.util.TypeUtils;
-import okhttp3.*;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ZmInvocationHandler implements InvocationHandler {
@@ -18,6 +16,7 @@ public class ZmInvocationHandler implements InvocationHandler {
   Class<?> service;
   RpcContext rpcContext;
   List<String> providers;
+  HttpInvoker httpInvoker = new OkHttpInvoker();
 
   public ZmInvocationHandler(Class<?> service, RpcContext rpcContext, List<String> providers) {
     this.service = service;
@@ -42,7 +41,7 @@ public class ZmInvocationHandler implements InvocationHandler {
     List<String> urls = rpcContext.getRouter().route(providers);
     String url = (String) rpcContext.getLoadBalancer().choose(urls);
     System.out.println("select ==> " + url);
-    RpcResponse rpcResponse = post(request, url);
+    RpcResponse<?> rpcResponse = httpInvoker.post(request, url);
 
     if (rpcResponse.isStatus()) {
       return TypeUtils.castMethodResult(method, rpcResponse.getData());
@@ -51,35 +50,6 @@ public class ZmInvocationHandler implements InvocationHandler {
       Exception ex = rpcResponse.getEx();
       // ex.printStackTrace();
       throw new RuntimeException(ex); // 直接抛出，Provider 的异常能传递到 Consumer
-    }
-  }
-
-  static final MediaType APPLICATION_JSON = MediaType.get("application/json");
-
-  OkHttpClient client =
-      new OkHttpClient.Builder()
-          .connectionPool(new ConnectionPool(16, 60, TimeUnit.SECONDS))
-          .connectTimeout(1, TimeUnit.SECONDS)
-          .readTimeout(1, TimeUnit.SECONDS)
-          .writeTimeout(1, TimeUnit.SECONDS)
-          .build();
-
-  private RpcResponse post(RpcRequest rpcRequest, String url) {
-    // 序列化请求
-    String reqJson = JSON.toJSONString(rpcRequest);
-
-    Request request =
-        new Request.Builder().url(url).post(RequestBody.create(reqJson, APPLICATION_JSON)).build();
-
-    try {
-      System.out.println("===> reqJson = " + reqJson);
-      String resJson = client.newCall(request).execute().body().string();
-      System.out.println("===> resJson = " + resJson);
-      // 反序列化响应
-      RpcResponse rpcResponse = JSON.parseObject(resJson, RpcResponse.class);
-      return rpcResponse;
-    } catch (IOException e) {
-      throw new RuntimeException(e);
     }
   }
 }
