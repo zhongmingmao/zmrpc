@@ -15,6 +15,11 @@ public class ProviderConfig {
     return new ProviderBootstrap();
   }
 
+  @Bean
+  public ProviderInvoker providerInvoker(@Autowired ProviderBootstrap providerBootstrap) {
+    return new ProviderInvoker(providerBootstrap);
+  }
+
   // 定义注册中心的启动关闭钩子
   //  @Bean(initMethod = "start", destroyMethod = "stop") - 启动后注册服务，反注册服务后关闭
   @Bean

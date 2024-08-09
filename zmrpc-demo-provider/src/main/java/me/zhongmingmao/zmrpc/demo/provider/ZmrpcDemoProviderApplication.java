@@ -4,8 +4,8 @@ import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import me.zhongmingmao.zmrpc.core.api.RpcRequest;
 import me.zhongmingmao.zmrpc.core.api.RpcResponse;
-import me.zhongmingmao.zmrpc.core.provider.ProviderBootstrap;
 import me.zhongmingmao.zmrpc.core.provider.ProviderConfig;
+import me.zhongmingmao.zmrpc.core.provider.ProviderInvoker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
@@ -26,11 +26,11 @@ public class ZmrpcDemoProviderApplication {
     SpringApplication.run(ZmrpcDemoProviderApplication.class, args);
   }
 
-  @Autowired ProviderBootstrap providerBootstrap;
+  @Autowired ProviderInvoker providerInvoker;
 
   @RequestMapping("/")
-  public RpcResponse invoke(@RequestBody RpcRequest request) {
-    return providerBootstrap.invoke(request);
+  public RpcResponse<Object> invoke(@RequestBody RpcRequest request) {
+    return providerInvoker.invoke(request);
   }
 
   // Spring 容器完全就绪后执行
