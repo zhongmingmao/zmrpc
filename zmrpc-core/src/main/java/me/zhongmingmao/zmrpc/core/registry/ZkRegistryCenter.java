@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import me.zhongmingmao.zmrpc.core.api.RegistryCenter;
 import me.zhongmingmao.zmrpc.core.provider.InstanceMeta;
+import me.zhongmingmao.zmrpc.core.provider.ServiceMeta;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -37,8 +38,8 @@ public class ZkRegistryCenter implements RegistryCenter {
   }
 
   @Override
-  public void register(String service, InstanceMeta instance) {
-    String servicePath = "/" + service;
+  public void register(ServiceMeta service, InstanceMeta instance) {
+    String servicePath = "/" + service.toZkPath();
 
     try {
       // service 注册为持久化节点
@@ -58,8 +59,8 @@ public class ZkRegistryCenter implements RegistryCenter {
   }
 
   @Override
-  public void unregister(String service, InstanceMeta instance) {
-    String servicePath = "/" + service;
+  public void unregister(ServiceMeta service, InstanceMeta instance) {
+    String servicePath = "/" + service.toZkPath();
 
     try {
       if (client.checkExists().forPath(servicePath) == null) {
@@ -81,8 +82,8 @@ public class ZkRegistryCenter implements RegistryCenter {
   }
 
   @Override
-  public List<InstanceMeta> fetchAll(String service) {
-    String servicePath = "/" + service;
+  public List<InstanceMeta> fetchAll(ServiceMeta service) {
+    String servicePath = "/" + service.toZkPath();
 
     try {
       // 获取所有子节点
@@ -110,8 +111,8 @@ public class ZkRegistryCenter implements RegistryCenter {
   // 监听 ZK 节点变化，获取当前最新的 Provider 列表，包装成事件，发送出去，实际的 Consumer 再消费
   @SneakyThrows
   @Override
-  public void subscribe(String service, ChangeListener listener) {
-    String servicePath = "/" + service;
+  public void subscribe(ServiceMeta service, ChangeListener listener) {
+    String servicePath = "/" + service.toZkPath();
     final TreeCache cache = // ZK 在本地的镜像数据缓存，减少交互
         TreeCache.newBuilder(client, servicePath).setCacheData(true).setMaxDepth(2).build();
     cache

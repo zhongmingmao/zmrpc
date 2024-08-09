@@ -34,6 +34,15 @@ public class ProviderBootstrap implements ApplicationContextAware {
   @Value("${server.port}")
   String port;
 
+  @Value("${app.id}")
+  String app;
+
+  @Value("${app.namespace}")
+  String namespace;
+
+  @Value("${app.env}")
+  String env;
+
   @PostConstruct // init-method
   public void init() {
     registryCenter = applicationContext.getBean(RegistryCenter.class);
@@ -68,12 +77,17 @@ public class ProviderBootstrap implements ApplicationContextAware {
     registryCenter.stop();
   }
 
+  private ServiceMeta buildServiceMeta(String service) {
+    return ServiceMeta.builder().app(app).namespace(namespace).env(env).name(service).build();
+  }
+
   private void registerService(String service) {
-    registryCenter.register(service, instance); // Spring 上下文尚未完全就绪，服务已经注册上去了，可能会被发现
+    registryCenter.register(
+        buildServiceMeta(service), instance); // Spring 上下文尚未完全就绪，服务已经注册上去了，可能会被发现
   }
 
   private void unregisterService(String service) {
-    registryCenter.unregister(service, instance);
+    registryCenter.unregister(buildServiceMeta(service), instance);
   }
 
   private void genInterface(Object provider) {

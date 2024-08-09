@@ -42,7 +42,7 @@ public class ZmInvocationHandler implements InvocationHandler {
 
     List<InstanceMeta> instances = rpcContext.getRouter().route(providers);
     InstanceMeta instance = rpcContext.getLoadBalancer().choose(instances);
-    System.out.println("select ==> " + instance);
+    System.out.println("select ==> " + instance.toUrl());
     RpcResponse<?> rpcResponse = httpInvoker.post(request, instance.toUrl());
 
     if (rpcResponse.isStatus()) {

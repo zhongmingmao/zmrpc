@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: zmrpc-demo-provider
+
+app:
+  id: app1
+  namespace: public
+  env: dev

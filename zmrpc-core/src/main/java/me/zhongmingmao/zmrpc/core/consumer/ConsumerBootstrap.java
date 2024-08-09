@@ -14,7 +14,9 @@ import me.zhongmingmao.zmrpc.core.api.RegistryCenter;
 import me.zhongmingmao.zmrpc.core.api.Router;
 import me.zhongmingmao.zmrpc.core.api.RpcContext;
 import me.zhongmingmao.zmrpc.core.provider.InstanceMeta;
+import me.zhongmingmao.zmrpc.core.provider.ServiceMeta;
 import me.zhongmingmao.zmrpc.core.util.MethodUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
@@ -23,14 +25,23 @@ public class ConsumerBootstrap implements ApplicationContextAware {
 
   @Setter ApplicationContext applicationContext;
 
+  @Value("${app.id}")
+  String app;
+
+  @Value("${app.namespace}")
+  String namespace;
+
+  @Value("${app.env}")
+  String env;
+
   Map<String, Object> stub = new HashMap<>();
 
   // 主要目的 - 为 @ZmConsumer 字段赋值 - 动态生成代理类，模拟 HTTP 请求
   // 通过 ApplicationRunner 调用，此时 ApplicationContext 已完全就绪
   public void start() {
 
-    Router router = applicationContext.getBean(Router.class);
-    LoadBalancer loadBalancer = applicationContext.getBean(LoadBalancer.class);
+    Router<InstanceMeta> router = applicationContext.getBean(Router.class);
+    LoadBalancer<InstanceMeta> loadBalancer = applicationContext.getBean(LoadBalancer.class);
     RpcContext rpcContext = RpcContext.builder().router(router).loadBalancer(loadBalancer).build();
 
     RegistryCenter registryCenter = applicationContext.getBean(RegistryCenter.class);
@@ -64,14 +75,14 @@ public class ConsumerBootstrap implements ApplicationContextAware {
 
   private Object createConsumerFromRegistry(
       Class<?> service, RpcContext rpcContext, RegistryCenter registryCenter) {
-    String serviceName = service.getCanonicalName();
+    ServiceMeta serviceMeta = buildServiceMeta(service.getCanonicalName());
 
-    List<InstanceMeta> providers = registryCenter.fetchAll(serviceName);
+    List<InstanceMeta> providers = registryCenter.fetchAll(serviceMeta);
     System.out.println("===> providers: " + providers);
 
     // 注册监听器，监听到变化后，修改 Provider 列表
     registryCenter.subscribe(
-        serviceName,
+        serviceMeta,
         event -> {
           List<InstanceMeta> changedNodes = event.getData(); // 获取传递出来的事件里面的数据
           providers.clear();
@@ -89,5 +100,9 @@ public class ConsumerBootstrap implements ApplicationContextAware {
         service.getClassLoader(),
         new Class[] {service},
         new ZmInvocationHandler(service, rpcContext, providers));
+  }
+
+  private ServiceMeta buildServiceMeta(String service) {
+    return ServiceMeta.builder().app(app).namespace(namespace).env(env).name(service).build();
   }
 }
