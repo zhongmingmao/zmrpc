@@ -29,7 +29,7 @@ public class ProviderBootstrap implements ApplicationContextAware {
   RegistryCenter registryCenter;
 
   @Getter MultiValueMap<String, ProviderMeta> skeleton = new LinkedMultiValueMap<>();
-  String instance;
+  InstanceMeta instance;
 
   @Value("${server.port}")
   String port;
@@ -52,7 +52,7 @@ public class ProviderBootstrap implements ApplicationContextAware {
 
     // 获取本机 IP
     String ip = InetAddress.getLocalHost().getHostAddress();
-    instance = ip + "_" + port;
+    instance = InstanceMeta.http(ip, Integer.parseInt(port));
 
     // 注册服务
     skeleton.keySet().forEach(this::registerService);

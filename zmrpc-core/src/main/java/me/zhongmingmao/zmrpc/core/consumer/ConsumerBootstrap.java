@@ -5,7 +5,6 @@ import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
@@ -14,6 +13,7 @@ import me.zhongmingmao.zmrpc.core.api.LoadBalancer;
 import me.zhongmingmao.zmrpc.core.api.RegistryCenter;
 import me.zhongmingmao.zmrpc.core.api.Router;
 import me.zhongmingmao.zmrpc.core.api.RpcContext;
+import me.zhongmingmao.zmrpc.core.provider.InstanceMeta;
 import me.zhongmingmao.zmrpc.core.util.MethodUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -66,31 +66,25 @@ public class ConsumerBootstrap implements ApplicationContextAware {
       Class<?> service, RpcContext rpcContext, RegistryCenter registryCenter) {
     String serviceName = service.getCanonicalName();
 
-    List<String> providers = buildProviders(registryCenter.fetchAll(serviceName));
+    List<InstanceMeta> providers = registryCenter.fetchAll(serviceName);
     System.out.println("===> providers: " + providers);
 
     // 注册监听器，监听到变化后，修改 Provider 列表
     registryCenter.subscribe(
         serviceName,
         event -> {
-          List<String> changedNodes = event.getData(); // 获取传递出来的事件里面的数据
+          List<InstanceMeta> changedNodes = event.getData(); // 获取传递出来的事件里面的数据
           providers.clear();
-          List<String> changedProviders = buildProviders(changedNodes);
-          System.out.println("===> changedProviders: " + changedProviders);
-          providers.addAll(changedProviders);
+          System.out.println("===> changedProviders: " + changedNodes);
+          providers.addAll(changedNodes);
         });
 
     return createConsumer(service, rpcContext, providers);
   }
 
-  private List<String> buildProviders(List<String> nodes) {
-    return nodes.stream()
-        .map(node -> "http://" + node.replace('_', ':') + "/")
-        .collect(Collectors.toList());
-  }
-
   // service 为被 @ZmConsumer 修饰的字段的类型
-  private Object createConsumer(Class<?> service, RpcContext rpcContext, List<String> providers) {
+  private Object createConsumer(
+      Class<?> service, RpcContext rpcContext, List<InstanceMeta> providers) {
     return Proxy.newProxyInstance(
         service.getClassLoader(),
         new Class[] {service},

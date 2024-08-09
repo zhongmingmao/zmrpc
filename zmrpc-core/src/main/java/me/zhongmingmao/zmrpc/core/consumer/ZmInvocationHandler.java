@@ -7,6 +7,7 @@ import lombok.experimental.FieldDefaults;
 import me.zhongmingmao.zmrpc.core.api.*;
 import me.zhongmingmao.zmrpc.core.consumer.http.HttpInvoker;
 import me.zhongmingmao.zmrpc.core.consumer.http.OkHttpInvoker;
+import me.zhongmingmao.zmrpc.core.provider.InstanceMeta;
 import me.zhongmingmao.zmrpc.core.util.MethodUtils;
 import me.zhongmingmao.zmrpc.core.util.TypeUtils;
 
@@ -15,10 +16,11 @@ public class ZmInvocationHandler implements InvocationHandler {
 
   Class<?> service;
   RpcContext rpcContext;
-  List<String> providers;
+  List<InstanceMeta> providers;
   HttpInvoker httpInvoker = new OkHttpInvoker();
 
-  public ZmInvocationHandler(Class<?> service, RpcContext rpcContext, List<String> providers) {
+  public ZmInvocationHandler(
+      Class<?> service, RpcContext rpcContext, List<InstanceMeta> providers) {
     this.service = service;
     this.rpcContext = rpcContext;
     this.providers = providers;
@@ -38,10 +40,10 @@ public class ZmInvocationHandler implements InvocationHandler {
     request.setMethodSign(MethodUtils.methodSign(method)); // 计算方法签名
     request.setArgs(args);
 
-    List<String> urls = rpcContext.getRouter().route(providers);
-    String url = (String) rpcContext.getLoadBalancer().choose(urls);
-    System.out.println("select ==> " + url);
-    RpcResponse<?> rpcResponse = httpInvoker.post(request, url);
+    List<InstanceMeta> instances = rpcContext.getRouter().route(providers);
+    InstanceMeta instance = rpcContext.getLoadBalancer().choose(instances);
+    System.out.println("select ==> " + instance);
+    RpcResponse<?> rpcResponse = httpInvoker.post(request, instance.toUrl());
 
     if (rpcResponse.isStatus()) {
       return TypeUtils.castMethodResult(method, rpcResponse.getData());

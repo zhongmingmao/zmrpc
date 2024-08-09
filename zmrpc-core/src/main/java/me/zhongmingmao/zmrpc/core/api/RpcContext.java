@@ -2,6 +2,7 @@ package me.zhongmingmao.zmrpc.core.api;
 
 import lombok.Builder;
 import lombok.Data;
+import me.zhongmingmao.zmrpc.core.provider.InstanceMeta;
 
 import java.util.List;
 
@@ -9,6 +10,6 @@ import java.util.List;
 @Builder
 public class RpcContext {
   List<Filter> filters;
-  Router router;
-  LoadBalancer loadBalancer;
+  Router<InstanceMeta> router;
+  LoadBalancer<InstanceMeta> loadBalancer;
 }
