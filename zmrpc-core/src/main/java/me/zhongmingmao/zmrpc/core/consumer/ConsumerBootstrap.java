@@ -53,6 +53,7 @@ public class ConsumerBootstrap implements ApplicationContextAware {
                     createConsumerFromRegistry(service, rpcContext, registryCenter); // 生成动态代理
                 field.setAccessible(true);
                 field.set(bean, consumer);
+                stub.put(serviceName, consumer);
               }
             } catch (Exception e) {
               throw new RuntimeException(e);
