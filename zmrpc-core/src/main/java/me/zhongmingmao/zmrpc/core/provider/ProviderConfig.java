@@ -16,7 +16,8 @@ public class ProviderConfig {
   }
 
   // 定义注册中心的启动关闭钩子
-  @Bean(initMethod = "start", destroyMethod = "stop")
+  //  @Bean(initMethod = "start", destroyMethod = "stop") - 启动后注册服务，反注册服务后关闭
+  @Bean
   public RegistryCenter registryCenter() {
     return new ZkRegistryCenter();
   }

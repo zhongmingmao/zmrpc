@@ -28,7 +28,7 @@ public class ZkRegistryCenter implements RegistryCenter {
   }
 
   @Override
-  public void stop() {
+  public void stop() { // Bean 销毁时执行
     System.out.println("zk client stop");
     client.close();
   }

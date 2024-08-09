@@ -31,6 +31,8 @@ public class ProviderBootstrap implements ApplicationContextAware {
 
   @Setter ApplicationContext applicationContext;
 
+  RegistryCenter registryCenter;
+
   MultiValueMap<String, ProviderMeta> skeleton = new LinkedMultiValueMap<>();
   String instance;
 
@@ -39,6 +41,8 @@ public class ProviderBootstrap implements ApplicationContextAware {
 
   @PostConstruct // init-method
   public void init() {
+    registryCenter = applicationContext.getBean(RegistryCenter.class);
+
     Map<String, Object> providers = applicationContext.getBeansWithAnnotation(ZmProvider.class);
     providers.values().forEach(this::genInterface);
 
@@ -48,6 +52,9 @@ public class ProviderBootstrap implements ApplicationContextAware {
   // 由 ApplicationRunner 触发，此时 ApplicationContext 已完全就绪，此时可以接收请求，即延迟注册
   @SneakyThrows
   public void start() {
+    // 启动注册中心
+    registryCenter.start();
+
     // 获取本机 IP
     String ip = InetAddress.getLocalHost().getHostAddress();
     instance = ip + "_" + port;
@@ -56,19 +63,23 @@ public class ProviderBootstrap implements ApplicationContextAware {
     skeleton.keySet().forEach(this::registerService);
   }
 
-  @PreDestroy
+  @PreDestroy // @PreDestroy 在 @Bean(destroyMethod = "stop") 后执行
   public void stop() {
     // 反注册服务
+    System.out.println("==> unregister all service");
     skeleton.keySet().forEach(this::unregisterService);
+
+    // 关闭注册中心
+    registryCenter.stop();
   }
 
   private void registerService(String service) {
-    RegistryCenter registryCenter = applicationContext.getBean(RegistryCenter.class);
+    //    RegistryCenter registryCenter = applicationContext.getBean(RegistryCenter.class);
     registryCenter.register(service, instance); // Spring 上下文尚未完全就绪，服务已经注册上去了，可能会被发现
   }
 
   private void unregisterService(String service) {
-    RegistryCenter registryCenter = applicationContext.getBean(RegistryCenter.class);
+    //    RegistryCenter registryCenter = applicationContext.getBean(RegistryCenter.class);
     registryCenter.unregister(service, instance);
   }
 
