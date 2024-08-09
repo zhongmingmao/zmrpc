@@ -8,6 +8,7 @@ import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import me.zhongmingmao.zmrpc.core.annotation.ZmConsumer;
 import me.zhongmingmao.zmrpc.core.api.LoadBalancer;
 import me.zhongmingmao.zmrpc.core.api.RegistryCenter;
@@ -20,6 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+@Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ConsumerBootstrap implements ApplicationContextAware {
 
@@ -55,7 +57,7 @@ public class ConsumerBootstrap implements ApplicationContextAware {
 
       fields.forEach(
           field -> {
-            System.out.println(" ===> " + field.getName());
+            log.info(" ===> " + field.getName());
             try {
               Class<?> service = field.getType();
               String serviceName = service.getCanonicalName();
@@ -78,7 +80,7 @@ public class ConsumerBootstrap implements ApplicationContextAware {
     ServiceMeta serviceMeta = buildServiceMeta(service.getCanonicalName());
 
     List<InstanceMeta> providers = registryCenter.fetchAll(serviceMeta);
-    System.out.println("===> providers: " + providers);
+    log.info("===> providers: " + providers);
 
     // 注册监听器，监听到变化后，修改 Provider 列表
     registryCenter.subscribe(
@@ -86,7 +88,7 @@ public class ConsumerBootstrap implements ApplicationContextAware {
         event -> {
           List<InstanceMeta> changedNodes = event.getData(); // 获取传递出来的事件里面的数据
           providers.clear();
-          System.out.println("===> changedProviders: " + changedNodes);
+          log.info("===> changedProviders: " + changedNodes);
           providers.addAll(changedNodes);
         });
 

@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import me.zhongmingmao.zmrpc.core.annotation.ZmProvider;
 import me.zhongmingmao.zmrpc.core.api.RegistryCenter;
 import me.zhongmingmao.zmrpc.core.meta.ProviderMeta;
@@ -21,6 +22,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+@Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ProviderBootstrap implements ApplicationContextAware {
 
@@ -50,7 +52,7 @@ public class ProviderBootstrap implements ApplicationContextAware {
     Map<String, Object> providers = applicationContext.getBeansWithAnnotation(ZmProvider.class);
     providers.values().forEach(this::genInterface);
 
-    skeleton.forEach((service, provider) -> System.out.println(service + " -> " + provider));
+    skeleton.forEach((service, provider) -> log.info(service + " -> " + provider));
   }
 
   // 由 ApplicationRunner 触发，此时 ApplicationContext 已完全就绪，此时可以接收请求，即延迟注册
@@ -70,7 +72,7 @@ public class ProviderBootstrap implements ApplicationContextAware {
   @PreDestroy // @PreDestroy 在 @Bean(destroyMethod = "stop") 后执行
   public void stop() {
     // 反注册服务
-    System.out.println("==> unregister all service");
+    log.info("==> unregister all service");
     skeleton.keySet().forEach(this::unregisterService);
 
     // 关闭注册中心
@@ -112,7 +114,7 @@ public class ProviderBootstrap implements ApplicationContextAware {
             .serviceImpl(impl)
             .methodSign(MethodUtils.methodSign(method))
             .build();
-    System.out.println("createProvider, " + providerMeta);
+    log.info("createProvider, " + providerMeta);
     skeleton.add(service.getCanonicalName(), providerMeta);
   }
 }

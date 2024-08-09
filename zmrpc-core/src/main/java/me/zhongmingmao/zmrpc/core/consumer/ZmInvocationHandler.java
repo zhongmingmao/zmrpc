@@ -4,6 +4,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import me.zhongmingmao.zmrpc.core.api.*;
 import me.zhongmingmao.zmrpc.core.consumer.http.HttpInvoker;
 import me.zhongmingmao.zmrpc.core.consumer.http.OkHttpInvoker;
@@ -11,6 +12,7 @@ import me.zhongmingmao.zmrpc.core.provider.InstanceMeta;
 import me.zhongmingmao.zmrpc.core.util.MethodUtils;
 import me.zhongmingmao.zmrpc.core.util.TypeUtils;
 
+@Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ZmInvocationHandler implements InvocationHandler {
 
@@ -42,7 +44,7 @@ public class ZmInvocationHandler implements InvocationHandler {
 
     List<InstanceMeta> instances = rpcContext.getRouter().route(providers);
     InstanceMeta instance = rpcContext.getLoadBalancer().choose(instances);
-    System.out.println("select ==> " + instance.toUrl());
+    log.debug("select ==> " + instance.toUrl());
     RpcResponse<?> rpcResponse = httpInvoker.post(request, instance.toUrl());
 
     if (rpcResponse.isStatus()) {

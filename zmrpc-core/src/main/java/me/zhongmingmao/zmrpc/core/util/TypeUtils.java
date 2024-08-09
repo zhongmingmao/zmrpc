@@ -2,6 +2,7 @@ package me.zhongmingmao.zmrpc.core.util;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Array;
@@ -10,6 +11,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
 
+@Slf4j
 public class TypeUtils {
 
   /**
@@ -44,7 +46,7 @@ public class TypeUtils {
       if (origin instanceof List list) {
         int length = list.size();
         Class<?> componentType = type.getComponentType();
-        System.out.println("componentType => " + componentType.getCanonicalName());
+        log.debug("componentType => " + componentType.getCanonicalName());
         Object resultArray = Array.newInstance(componentType, length);
 
         for (int i = 0; i < length; i++) {
@@ -112,15 +114,15 @@ public class TypeUtils {
         Type genericReturnType = method.getGenericReturnType();
         // genericReturnType ==> java.util.Map<java.lang.String,
         // me.zhongmingmao.zmrpc.demo.api.User>
-        System.out.println("genericReturnType ==> " + genericReturnType);
+        log.debug("genericReturnType ==> " + genericReturnType);
         if (genericReturnType instanceof ParameterizedType parameterizedType) {
           Type[] actualTypes = parameterizedType.getActualTypeArguments();
           Class<?> keyType = (Class<?>) actualTypes[0];
           Class<?> valueType = (Class<?>) actualTypes[1];
           // class java.lang.String
-          System.out.println("keyType ==> " + keyType);
+          log.debug("keyType ==> " + keyType);
           // class me.zhongmingmao.zmrpc.demo.api.User
-          System.out.println("valueType ==> " + valueType);
+          log.debug("valueType ==> " + valueType);
           jsonResult.forEach(
               (k, v) -> {
                 Object key = TypeUtils.cast(k, keyType);
@@ -138,7 +140,7 @@ public class TypeUtils {
 
       if (returnType.isArray()) { // 返回值为数组类型
         Class<?> componentType = returnType.getComponentType(); // 数组元素的类型
-        System.out.println("componentType => " + componentType.getCanonicalName());
+        log.debug("componentType => " + componentType.getCanonicalName());
         Object resultArray = Array.newInstance(componentType, array.length); // 创建预期类型的数组
         for (int i = 0; i < array.length; i++) {
           Object component = array[i];
@@ -152,11 +154,11 @@ public class TypeUtils {
         List<Object> resultList = new ArrayList<>(array.length);
         Type genericReturnType = method.getGenericReturnType(); // 获取泛型类型
         // java.util.List<me.zhongmingmao.zmrpc.demo.api.User>
-        System.out.println("genericReturnType ==> " + genericReturnType);
+        log.debug("genericReturnType ==> " + genericReturnType);
         if (genericReturnType instanceof ParameterizedType parameterizedType) { // 参数化类型
           Type actualType = parameterizedType.getActualTypeArguments()[0];
           // class me.zhongmingmao.zmrpc.demo.api.User
-          System.out.println("actualType ==> " + actualType);
+          log.debug("actualType ==> " + actualType);
           for (Object o : array) {
             resultList.add(TypeUtils.cast(o, (Class<?>) actualType));
           }

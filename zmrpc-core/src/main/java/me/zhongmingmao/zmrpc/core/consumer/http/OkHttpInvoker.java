@@ -1,6 +1,7 @@
 package me.zhongmingmao.zmrpc.core.consumer.http;
 
 import com.alibaba.fastjson.JSON;
+import lombok.extern.slf4j.Slf4j;
 import me.zhongmingmao.zmrpc.core.api.RpcRequest;
 import me.zhongmingmao.zmrpc.core.api.RpcResponse;
 import okhttp3.*;
@@ -8,6 +9,7 @@ import okhttp3.*;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 public class OkHttpInvoker implements HttpInvoker {
 
   static final MediaType APPLICATION_JSON = MediaType.get("application/json");
@@ -33,9 +35,9 @@ public class OkHttpInvoker implements HttpInvoker {
         new Request.Builder().url(url).post(RequestBody.create(reqJson, APPLICATION_JSON)).build();
 
     try {
-      System.out.println("===> reqJson = " + reqJson);
+      log.debug("===> reqJson = " + reqJson);
       String resJson = client.newCall(request).execute().body().string();
-      System.out.println("===> resJson = " + resJson);
+      log.debug("===> resJson = " + resJson);
       // 反序列化响应
       RpcResponse<Object> rpcResponse = JSON.parseObject(resJson, RpcResponse.class);
       return rpcResponse;

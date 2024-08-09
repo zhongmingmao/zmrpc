@@ -1,5 +1,6 @@
 package me.zhongmingmao.zmrpc.core.provider;
 
+import lombok.extern.slf4j.Slf4j;
 import me.zhongmingmao.zmrpc.core.api.RegistryCenter;
 import me.zhongmingmao.zmrpc.core.registry.zk.ZkRegistryCenter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +8,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+@Slf4j
 @Configuration
 public class ProviderConfig {
 
@@ -30,9 +32,9 @@ public class ProviderConfig {
   @Bean
   public ApplicationRunner providerBootstrapStart(@Autowired ProviderBootstrap providerBootstrap) {
     return args -> {
-      System.out.println("providerBootstrapStart start");
+      log.info("providerBootstrapStart start");
       providerBootstrap.start(); // 延迟注册 - 只有在 Spring 上下文完全就绪后，应用才具备接收请求的能力，此刻才执行注册动作
-      System.out.println("providerBootstrapStart end");
+      log.info("providerBootstrapStart end");
     };
   }
 }

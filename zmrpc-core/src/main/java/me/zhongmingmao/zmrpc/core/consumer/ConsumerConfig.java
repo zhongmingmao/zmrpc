@@ -1,5 +1,6 @@
 package me.zhongmingmao.zmrpc.core.consumer;
 
+import lombok.extern.slf4j.Slf4j;
 import me.zhongmingmao.zmrpc.core.api.LoadBalancer;
 import me.zhongmingmao.zmrpc.core.api.RegistryCenter;
 import me.zhongmingmao.zmrpc.core.api.Router;
@@ -12,6 +13,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 
+@Slf4j
 @Configuration
 public class ConsumerConfig {
 
@@ -25,9 +27,9 @@ public class ConsumerConfig {
   @Order(Integer.MIN_VALUE)
   public ApplicationRunner consumerBootstrapStart(@Autowired ConsumerBootstrap bootstrap) {
     return args -> {
-      System.out.println("consumerBootstrapStart begin ...");
+      log.info("consumerBootstrapStart begin ...");
       bootstrap.start();
-      System.out.println("consumerBootstrapStart end ...");
+      log.info("consumerBootstrapStart end ...");
     };
   }
 
