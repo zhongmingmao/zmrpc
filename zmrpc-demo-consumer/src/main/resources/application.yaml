@@ -6,6 +6,8 @@ server:
 
 zmrpc:
   providers: http://127.0.0.1:8081/,http://127.0.0.1:8082/,http://127.0.0.1:8083/
+  zkServer: arch:2181
+  zkRoot: zmrpc
 
 app:
   id: app1

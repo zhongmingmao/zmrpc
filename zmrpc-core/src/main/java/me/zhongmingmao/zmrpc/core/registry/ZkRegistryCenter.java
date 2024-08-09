@@ -13,19 +13,26 @@ import org.apache.curator.framework.recipes.cache.TreeCache;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Value;
 
 public class ZkRegistryCenter implements RegistryCenter {
+
+  @Value("${zmrpc.zkServer}")
+  String servers;
+
+  @Value("${zmrpc.zkRoot}")
+  String root;
 
   private CuratorFramework client = null;
 
   @Override
   public void start() {
-    System.out.println("zk client start");
+    System.out.printf("zk client start, connect to zk, servers: %s, root: %s%n", servers, root);
     RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
     client =
         CuratorFrameworkFactory.builder()
-            .connectString("arch:2181")
-            .namespace("zmrpc")
+            .connectString(servers)
+            .namespace(root)
             .retryPolicy(retryPolicy)
             .build();
     client.start();
