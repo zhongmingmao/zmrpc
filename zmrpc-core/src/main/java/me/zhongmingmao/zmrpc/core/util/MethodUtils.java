@@ -1,7 +1,11 @@
 package me.zhongmingmao.zmrpc.core.util;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class MethodUtils {
 
@@ -26,5 +30,25 @@ public class MethodUtils {
     sb.append("@").append(method.getParameterCount());
     Arrays.stream(method.getParameterTypes()).forEach(c -> sb.append("_").append(c.getName()));
     return sb.toString();
+  }
+
+  public static List<Field> findAnnotatedField(
+      Class<?> klass, Class<? extends Annotation> annotationClass) {
+    List<Field> annotatedFields = new ArrayList<>();
+
+    while (klass != null) {
+      Field[] fields = klass.getDeclaredFields();
+      for (Field field : fields) {
+        if (field.isAnnotationPresent(annotationClass)) {
+          annotatedFields.add(field);
+        }
+      }
+
+      // 由于 bean.getClass() 是被 Spring 增强过的子类
+      // 因此，需要不停地向上寻找 @ZmConsumer 修饰的字段
+      klass = klass.getSuperclass();
+    }
+
+    return annotatedFields;
   }
 }

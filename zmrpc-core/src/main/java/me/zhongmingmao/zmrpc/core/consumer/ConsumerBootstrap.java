@@ -2,7 +2,6 @@ package me.zhongmingmao.zmrpc.core.consumer;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +14,7 @@ import me.zhongmingmao.zmrpc.core.api.LoadBalancer;
 import me.zhongmingmao.zmrpc.core.api.RegistryCenter;
 import me.zhongmingmao.zmrpc.core.api.Router;
 import me.zhongmingmao.zmrpc.core.api.RpcContext;
+import me.zhongmingmao.zmrpc.core.util.MethodUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
@@ -40,7 +40,7 @@ public class ConsumerBootstrap implements ApplicationContextAware {
       Object bean = applicationContext.getBean(name);
 
       // bean.getClass() 是被 Spring 增强过的子类
-      List<Field> fields = findAnnotatedField(bean.getClass());
+      List<Field> fields = MethodUtils.findAnnotatedField(bean.getClass(), ZmConsumer.class);
 
       fields.forEach(
           field -> {
@@ -94,24 +94,5 @@ public class ConsumerBootstrap implements ApplicationContextAware {
         service.getClassLoader(),
         new Class[] {service},
         new ZmInvocationHandler(service, rpcContext, providers));
-  }
-
-  private List<Field> findAnnotatedField(Class<?> klass) {
-    List<Field> annotatedFields = new ArrayList<>();
-
-    while (klass != null) {
-      Field[] fields = klass.getDeclaredFields();
-      for (Field field : fields) {
-        if (field.isAnnotationPresent(ZmConsumer.class)) {
-          annotatedFields.add(field);
-        }
-      }
-
-      // 由于 bean.getClass() 是被 Spring 增强过的子类
-      // 因此，需要不停地向上寻找 @ZmConsumer 修饰的字段
-      klass = klass.getSuperclass();
-    }
-
-    return annotatedFields;
   }
 }
