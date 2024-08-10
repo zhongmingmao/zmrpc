@@ -65,6 +65,9 @@
   - [Consumer](#consumer-5)
     - [Spring Bean](#spring-bean-2)
     - [Subscribe](#subscribe)
+- [Filter](#filter-1)
+  - [CacheFilter](#cachefilter)
+- [Consumer](#consumer-6)
 
 # 服务提供者
 
@@ -1816,5 +1819,94 @@ public class ConsumerBootstrap implements ApplicationContextAware {
         .collect(Collectors.toList());
   }
 ...
+}
+```
+
+# Filter
+
+> Filter 可以分为 Consumer 端和 Provider 端
+> 
+
+```java
+public interface Filter {
+
+  // 过滤请求，缓存或者拦截
+  Object preFilter(RpcRequest request);
+
+  // 对响应进行加工
+  void postFilter(RpcRequest request, RpcResponse response, Object result);
+
+  //  Filter next();
+
+  Filter DEFAULT =
+      new Filter() {
+        @Override
+        public Object preFilter(RpcRequest request) {
+          return null; // no cache or block
+        }
+
+        @Override
+        public void postFilter(RpcRequest request, RpcResponse response, Object result) {}
+      };
+}
+```
+
+## CacheFilter
+
+> 一般为过滤链的最后一个
+> 
+
+```java
+public class CacheFilter implements Filter {
+
+  // TODO Guava
+  static Map<String, Object> cache = new ConcurrentHashMap<>();
+
+  @Override
+  public Object preFilter(RpcRequest request) {
+    return cache.get(request.toString());
+  }
+
+  @Override
+  public void postFilter(RpcRequest request, RpcResponse response, Object result) {
+    cache.putIfAbsent(request.toString(), result);
+  }
+}
+```
+
+# Consumer
+
+```java
+@Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class ZmInvocationHandler implements InvocationHandler {
+
+  // 模拟 HTTP 请求
+  @Override
+  public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+		...
+
+    RpcRequest rpcRequest = new RpcRequest();
+
+    List<Filter> filters = rpcContext.getFilters();
+    for (Filter filter : filters) {
+      Object filterResult = filter.preFilter(rpcRequest);
+      if (filterResult != null) { // cached or blocked
+        log.debug("{} ==> preFilter, filterResult: {}", filter.getClass().getName(), filterResult);
+        return filterResult;
+      }
+    }
+
+    RpcResponse<?> rpcResponse = httpInvoker.post(rpcRequest, instance.toUrl());
+
+    Object result = castResult(method, rpcResponse);
+    for (Filter filter : filters) {
+      filter.postFilter(rpcRequest, rpcResponse, result); // chain
+    }
+
+    return result;
+  }
+	
+	...
 }
 ```
