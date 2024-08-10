@@ -11,6 +11,7 @@ import me.zhongmingmao.zmrpc.core.consumer.http.OkHttpInvoker;
 import me.zhongmingmao.zmrpc.core.provider.InstanceMeta;
 import me.zhongmingmao.zmrpc.core.util.MethodUtils;
 import me.zhongmingmao.zmrpc.core.util.TypeUtils;
+import org.jetbrains.annotations.Nullable;
 
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -37,16 +38,35 @@ public class ZmInvocationHandler implements InvocationHandler {
       return null;
     }
 
-    RpcRequest request = new RpcRequest();
-    request.setService(service.getCanonicalName()); // service 为被 @ZmConsumer 修饰的字段的类型
-    request.setMethodSign(MethodUtils.methodSign(method)); // 计算方法签名
-    request.setArgs(args);
+    RpcRequest rpcRequest = new RpcRequest();
+    rpcRequest.setService(service.getCanonicalName()); // service 为被 @ZmConsumer 修饰的字段的类型
+    rpcRequest.setMethodSign(MethodUtils.methodSign(method)); // 计算方法签名
+    rpcRequest.setArgs(args);
+
+    List<Filter> filters = rpcContext.getFilters();
+    for (Filter filter : filters) {
+      Object filterResult = filter.preFilter(rpcRequest);
+      if (filterResult != null) { // cached or blocked
+        log.debug("{} ==> preFilter, filterResult: {}", filter.getClass().getName(), filterResult);
+        return filterResult;
+      }
+    }
 
     List<InstanceMeta> instances = rpcContext.getRouter().route(providers);
     InstanceMeta instance = rpcContext.getLoadBalancer().choose(instances);
     log.debug("select ==> " + instance.toUrl());
-    RpcResponse<?> rpcResponse = httpInvoker.post(request, instance.toUrl());
+    RpcResponse<?> rpcResponse = httpInvoker.post(rpcRequest, instance.toUrl());
 
+    Object result = castResult(method, rpcResponse);
+    for (Filter filter : filters) {
+      filter.postFilter(rpcRequest, rpcResponse, result); // chain
+    }
+
+    return result;
+  }
+
+  @Nullable
+  private static Object castResult(Method method, RpcResponse<?> rpcResponse) {
     if (rpcResponse.isStatus()) {
       return TypeUtils.castMethodResult(method, rpcResponse.getData());
     } else {

@@ -1,10 +1,12 @@
 package me.zhongmingmao.zmrpc.core.consumer;
 
 import lombok.extern.slf4j.Slf4j;
+import me.zhongmingmao.zmrpc.core.api.Filter;
 import me.zhongmingmao.zmrpc.core.api.LoadBalancer;
 import me.zhongmingmao.zmrpc.core.api.RegistryCenter;
 import me.zhongmingmao.zmrpc.core.api.Router;
 import me.zhongmingmao.zmrpc.core.cluster.RoundRobinLoadBalancer;
+import me.zhongmingmao.zmrpc.core.filter.CacheFilter;
 import me.zhongmingmao.zmrpc.core.provider.InstanceMeta;
 import me.zhongmingmao.zmrpc.core.registry.zk.ZkRegistryCenter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +33,11 @@ public class ConsumerConfig {
       bootstrap.start();
       log.info("consumerBootstrapStart end ...");
     };
+  }
+
+  @Bean
+  public Filter filter() {
+    return new CacheFilter();
   }
 
   @Bean

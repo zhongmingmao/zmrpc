@@ -10,10 +10,7 @@ import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import me.zhongmingmao.zmrpc.core.annotation.ZmConsumer;
-import me.zhongmingmao.zmrpc.core.api.LoadBalancer;
-import me.zhongmingmao.zmrpc.core.api.RegistryCenter;
-import me.zhongmingmao.zmrpc.core.api.Router;
-import me.zhongmingmao.zmrpc.core.api.RpcContext;
+import me.zhongmingmao.zmrpc.core.api.*;
 import me.zhongmingmao.zmrpc.core.provider.InstanceMeta;
 import me.zhongmingmao.zmrpc.core.provider.ServiceMeta;
 import me.zhongmingmao.zmrpc.core.util.MethodUtils;
@@ -41,10 +38,12 @@ public class ConsumerBootstrap implements ApplicationContextAware {
   // 主要目的 - 为 @ZmConsumer 字段赋值 - 动态生成代理类，模拟 HTTP 请求
   // 通过 ApplicationRunner 调用，此时 ApplicationContext 已完全就绪
   public void start() {
-
+    List<Filter> filters =
+        applicationContext.getBeansOfType(Filter.class).values().stream().toList();
     Router<InstanceMeta> router = applicationContext.getBean(Router.class);
     LoadBalancer<InstanceMeta> loadBalancer = applicationContext.getBean(LoadBalancer.class);
-    RpcContext rpcContext = RpcContext.builder().router(router).loadBalancer(loadBalancer).build();
+    RpcContext rpcContext =
+        RpcContext.builder().filters(filters).router(router).loadBalancer(loadBalancer).build();
 
     RegistryCenter registryCenter = applicationContext.getBean(RegistryCenter.class);
 
