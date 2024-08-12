@@ -15,13 +15,13 @@
         <dependency>
             <groupId>me.zhongmingmao</groupId>
             <artifactId>zmrpc-core</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${revision}</version>
         </dependency>
 
         <dependency>
             <groupId>me.zhongmingmao</groupId>
             <artifactId>zmrpc-demo-api</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${revision}</version>
         </dependency>
 
         <dependency>
@@ -42,7 +42,7 @@
         <dependency>
             <groupId>me.zhongmingmao</groupId>
             <artifactId>zmrpc-demo-provider</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${revision}</version>
             <classifier>provider-to-import</classifier>
             <scope>test</scope>
         </dependency>

@@ -1,0 +1,20 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: zmrpc-demo-provider
+
+zmrpc:
+  zkServer: 127.0.0.1:12181
+  zkRoot: zmrpc
+
+app:
+  id: app1
+  namespace: public
+  env: dev
+
+logging:
+  level:
+    root: error
+    me.zhongmingmao.zmrpc: info
