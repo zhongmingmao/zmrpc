@@ -23,7 +23,7 @@ class ZmrpcDemoConsumerApplicationTests {
     context =
         SpringApplication.run(
             ZmrpcDemoProviderApplication.class,
-            "--server.port=8084",
+            "--server.port=9999",
             "--zmrpc.zkServer=" + zookeeper.connectString(),
             "--logging.level.me.zhongmingmao.zmrpc=debug");
   }
