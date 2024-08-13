@@ -70,10 +70,7 @@ public class ZmInvocationHandler implements InvocationHandler {
     if (rpcResponse.isStatus()) {
       return TypeUtils.castMethodResult(method, rpcResponse.getData());
     } else {
-      // 异常
-      Exception ex = rpcResponse.getEx();
-      // ex.printStackTrace();
-      throw new RuntimeException(ex); // 直接抛出，Provider 的异常能传递到 Consumer
+      throw new RuntimeException(rpcResponse.getEx()); // 直接抛出，Provider 的异常能传递到 Consumer
     }
   }
 }

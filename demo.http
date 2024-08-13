@@ -1,5 +1,5 @@
 ### 获取用户信息 1
-POST http://localhost:8080/?id=101
+POST http://localhost:9980/?id=101
 Content-Type: application/json
 
 {

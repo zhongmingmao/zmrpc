@@ -5,6 +5,8 @@ import java.util.Map;
 
 public interface UserService {
 
+  User ex(boolean flag);
+
   User findById(int id);
 
   User findById(int id, String name);

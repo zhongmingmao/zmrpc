@@ -16,6 +16,14 @@ public class UserServiceImpl implements UserService {
   String port;
 
   @Override
+  public User ex(boolean flag) {
+    if (flag) {
+      throw new RuntimeException("just throw an exception");
+    }
+    return User.builder().id(-1).name("zhongmingmao-" + port).build();
+  }
+
+  @Override
   public User findById(int id) {
     return User.builder().id(id).name("zhongmingmao-" + port).build();
   }

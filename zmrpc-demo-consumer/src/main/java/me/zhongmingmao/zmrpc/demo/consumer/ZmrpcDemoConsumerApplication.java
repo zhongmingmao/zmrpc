@@ -40,6 +40,13 @@ public class ZmrpcDemoConsumerApplication {
   @Bean
   public ApplicationRunner consumerRun() {
     return args -> {
+      try {
+        User user = userService.ex(true);
+        System.out.println("rpc result, user = " + user);
+      } catch (Exception e) {
+        System.out.println("===> exception: " + e.getMessage());
+      }
+
       User user = userService.findById(1);
       System.out.println("rpc result, user = " + user);
 

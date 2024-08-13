@@ -438,7 +438,7 @@ public class ZmInvocationHandler implements InvocationHandler {
 
     Request request =
         new Request.Builder()
-            .url("http://127.0.0.1:8080/")
+            .url("http://127.0.0.1:9980/")
             .post(RequestBody.create(reqJson, APPLICATION_JSON))
             .build();
 
@@ -1570,7 +1570,7 @@ public interface RegistryCenter {
     RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
     client =
         CuratorFrameworkFactory.builder()
-            .connectString("arch:2181")
+            .connectString("127.0.0.1:2181")
             .namespace("zmrpc")
             .retryPolicy(retryPolicy)
             .build();

@@ -6,7 +6,7 @@ spring:
     name: zmrpc-demo-provider
 
 zmrpc:
-  zkServer: arch:2181
+  zkServer: 127.0.0.1:2181
   zkRoot: zmrpc
 
 app:

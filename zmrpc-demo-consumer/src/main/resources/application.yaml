@@ -2,11 +2,11 @@ spring:
   application:
     name: zmrpc-demo-consumer
 server:
-  port: 8080
+  port: 9980
 
 zmrpc:
   providers: http://127.0.0.1:8081/,http://127.0.0.1:8082/,http://127.0.0.1:8083/
-  zkServer: arch:2181
+  zkServer: 127.0.0.1:2181
   zkRoot: zmrpc
 
 app:
