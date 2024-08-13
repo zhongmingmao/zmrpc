@@ -62,6 +62,7 @@ public class ZmInvocationHandler implements InvocationHandler {
           }
         }
 
+        // 重新进行 LB
         List<InstanceMeta> instances = rpcContext.getRouter().route(providers);
         InstanceMeta instance = rpcContext.getLoadBalancer().choose(instances);
         log.debug("select ==> " + instance.toUrl());

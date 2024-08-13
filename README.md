@@ -68,6 +68,9 @@
 - [Filter](#filter-1)
   - [CacheFilter](#cachefilter)
   - [Consumer](#consumer-6)
+- [超时处理](#超时处理)
+  - [Consumer](#consumer-7)
+  - [Provider](#provider-5)
 
 # 服务提供者
 
@@ -1910,3 +1913,70 @@ public class ZmInvocationHandler implements InvocationHandler {
 	...
 }
 ```
+
+# 超时处理
+
+<aside>
+💡 超时配置应该遵循**漏斗**原则
+
+</aside>
+
+## Consumer
+
+> 发生 SocketTimeoutException，则重新进行 LB
+> 
+
+```java
+@Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class ZmInvocationHandler implements InvocationHandler {
+
+  // 模拟 HTTP 请求
+  @Override
+  public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    // 重试策略 - 发生 SocketTimeoutException，则重新进行 LB
+    int retries = Integer.parseInt(rpcContext.getParameters().getOrDefault("app.retries", "1"));
+    while (retries-- > 0) {
+      log.debug("===> retries: {}", retries);
+      try {
+        List<Filter> filters = rpcContext.getFilters();
+        for (Filter filter : filters) {
+          Object filterResult = filter.preFilter(rpcRequest);
+          if (filterResult != null) { // cached or blocked
+            log.debug(
+                "{} ==> preFilter, filterResult: {}", filter.getClass().getName(), filterResult);
+            return filterResult;
+          }
+        }
+
+        // 重新进行 LB
+        List<InstanceMeta> instances = rpcContext.getRouter().route(providers);
+        InstanceMeta instance = rpcContext.getLoadBalancer().choose(instances);
+        log.debug("select ==> " + instance.toUrl());
+        RpcResponse<?> rpcResponse = httpInvoker.post(rpcRequest, instance.toUrl());
+
+        Object result = castResult(method, rpcResponse);
+        for (Filter filter : filters) {
+          filter.postFilter(rpcRequest, rpcResponse, result); // chain
+        }
+
+        return result;
+      } catch (Exception e) {
+        log.warn("invoke fail, cause: {}", e.getCause().getMessage());
+        if (!(e.getCause() instanceof SocketTimeoutException)) {
+          throw e;
+        }
+      }
+    }
+
+    return null;
+  }
+}
+```
+
+## Provider
+
+<aside>
+💡 TBD - Provider 本身的 Invoke 也可能会超时
+
+</aside>
