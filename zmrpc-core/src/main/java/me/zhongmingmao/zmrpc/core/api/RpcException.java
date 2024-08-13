@@ -36,6 +36,7 @@ public class RpcException extends RuntimeException {
     this.errCode = errCode;
   }
 
+  // TODO Enum
   // X => 为技术类异常，可以考虑重试
   // Y => 为业务类异常，一般不可重试，可以直接抛出
   // Z => 未知异常，后续再归类

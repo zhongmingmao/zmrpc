@@ -2,6 +2,9 @@ package me.zhongmingmao.zmrpc.demo.provider;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import lombok.SneakyThrows;
 import me.zhongmingmao.zmrpc.core.annotation.ZmProvider;
 import me.zhongmingmao.zmrpc.demo.api.User;
 import me.zhongmingmao.zmrpc.demo.api.UserService;
@@ -86,5 +89,15 @@ public class UserServiceImpl implements UserService {
   @Override
   public Map<String, User> getMap(Map<String, User> users) {
     return users;
+  }
+
+  @SneakyThrows
+  @Override
+  public User timeout(int ms) {
+    if (Objects.equals("8081", port)) {
+      TimeUnit.MILLISECONDS.sleep(ms);
+    }
+
+    return User.builder().id(ms).name("zhongmingmao-" + port).build();
   }
 }

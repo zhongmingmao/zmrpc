@@ -32,4 +32,6 @@ public interface UserService {
   List<User> getList(List<User> users);
 
   Map<String, User> getMap(Map<String, User> users);
+
+  User timeout(int ms);
 }

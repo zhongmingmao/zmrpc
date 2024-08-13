@@ -33,6 +33,12 @@ public class ConsumerBootstrap implements ApplicationContextAware {
   @Value("${app.env}")
   String env;
 
+  @Value("${app.retries}")
+  int retries;
+
+  @Value("${app.timeout}")
+  int timeout;
+
   Map<String, Object> stub = new HashMap<>();
 
   // 主要目的 - 为 @ZmConsumer 字段赋值 - 动态生成代理类，模拟 HTTP 请求
@@ -42,8 +48,17 @@ public class ConsumerBootstrap implements ApplicationContextAware {
         applicationContext.getBeansOfType(Filter.class).values().stream().toList();
     Router<InstanceMeta> router = applicationContext.getBean(Router.class);
     LoadBalancer<InstanceMeta> loadBalancer = applicationContext.getBean(LoadBalancer.class);
+    Map<String, String> parameters = new HashMap<>();
+    parameters.put("app.retries", String.valueOf(retries));
+    parameters.put("app.timeout", String.valueOf(timeout));
+
     RpcContext rpcContext =
-        RpcContext.builder().filters(filters).router(router).loadBalancer(loadBalancer).build();
+        RpcContext.builder()
+            .filters(filters)
+            .router(router)
+            .loadBalancer(loadBalancer)
+            .parameters(parameters)
+            .build();
 
     RegistryCenter registryCenter = applicationContext.getBean(RegistryCenter.class);
 
