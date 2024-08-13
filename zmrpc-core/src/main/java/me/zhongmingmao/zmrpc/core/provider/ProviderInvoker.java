@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import me.zhongmingmao.zmrpc.core.api.RpcException;
 import me.zhongmingmao.zmrpc.core.api.RpcRequest;
 import me.zhongmingmao.zmrpc.core.api.RpcResponse;
 import me.zhongmingmao.zmrpc.core.meta.ProviderMeta;
@@ -41,9 +42,10 @@ public class ProviderInvoker {
       return response;
       // 简化异常信息，无需将 Provider 完整堆栈返回给 Consumer
     } catch (InvocationTargetException e) {
-      response.setEx(new RuntimeException(e.getTargetException().getMessage()));
+      response.setEx(
+          new RpcException(e.getTargetException().getMessage(), e, RpcException.ReflectException));
     } catch (IllegalAccessException e) {
-      response.setEx(new RuntimeException(e.getMessage()));
+      response.setEx(new RpcException(e.getMessage(), e, RpcException.ReflectException));
     }
 
     return response;

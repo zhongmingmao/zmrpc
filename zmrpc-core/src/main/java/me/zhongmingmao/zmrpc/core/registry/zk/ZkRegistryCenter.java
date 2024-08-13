@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import me.zhongmingmao.zmrpc.core.api.RegistryCenter;
+import me.zhongmingmao.zmrpc.core.api.RpcException;
 import me.zhongmingmao.zmrpc.core.provider.InstanceMeta;
 import me.zhongmingmao.zmrpc.core.provider.ServiceMeta;
 import me.zhongmingmao.zmrpc.core.registry.ChangeListener;
@@ -65,7 +66,7 @@ public class ZkRegistryCenter implements RegistryCenter {
         client.create().withMode(CreateMode.EPHEMERAL).forPath(instancePath, "provider".getBytes());
       }
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      throw new RpcException(e, RpcException.ZookeeperException);
     }
   }
 
@@ -88,7 +89,7 @@ public class ZkRegistryCenter implements RegistryCenter {
       log.info("===> unregister from zk, instancePath: " + instancePath);
       client.delete().quietly().forPath(instancePath); // 删除 instance
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      throw new RpcException(e, RpcException.ZookeeperException);
     }
   }
 
@@ -104,7 +105,7 @@ public class ZkRegistryCenter implements RegistryCenter {
 
       return buildInstances(nodes);
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      throw new RpcException(e, RpcException.ZookeeperException);
     }
   }
 

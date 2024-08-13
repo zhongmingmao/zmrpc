@@ -1,13 +1,13 @@
 package me.zhongmingmao.zmrpc.core.consumer.http;
 
 import com.alibaba.fastjson.JSON;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import me.zhongmingmao.zmrpc.core.api.RpcException;
 import me.zhongmingmao.zmrpc.core.api.RpcRequest;
 import me.zhongmingmao.zmrpc.core.api.RpcResponse;
 import okhttp3.*;
-
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class OkHttpInvoker implements HttpInvoker {
@@ -42,7 +42,7 @@ public class OkHttpInvoker implements HttpInvoker {
       RpcResponse<Object> rpcResponse = JSON.parseObject(resJson, RpcResponse.class);
       return rpcResponse;
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new RpcException(e, RpcException.HttpException);
     }
   }
 }

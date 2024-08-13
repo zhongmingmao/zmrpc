@@ -68,7 +68,7 @@ public class ConsumerBootstrap implements ApplicationContextAware {
                 stub.put(serviceName, consumer);
               }
             } catch (Exception e) {
-              throw new RuntimeException(e);
+              throw new RpcException(e, RpcException.ReflectException);
             }
           });
     }
