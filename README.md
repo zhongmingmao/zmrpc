@@ -71,6 +71,9 @@
 - [超时处理](#超时处理)
   - [Consumer](#consumer-7)
   - [Provider](#provider-5)
+- [故障隔离](#故障隔离)
+  - [实现机制](#实现机制)
+  - [核心过程](#核心过程-1)
 
 # 服务提供者
 
@@ -1980,3 +1983,138 @@ public class ZmInvocationHandler implements InvocationHandler {
 💡 TBD - Provider 本身的 Invoke 也可能会超时
 
 </aside>
+
+# 故障隔离
+
+## 实现机制
+
+1. 有节点宕机，通过多个 Provider + 注册中心，可以在运行期保障服务整体的可用性
+2. 有个别节点偶尔异常，但没有宕机，可以通过重试 + LB 重选节点，实现这次调用的成功
+3. 节点在一段时间内异常（节点上有很多服务，其中个别服务慢）、节点本身没有宕机 - 故障隔离
+    1. 定义规则，在**服务级别**识别**故障节点**
+    2. 每次**定时**放入**部分流量**进行**探活** - half open
+    3. 探活好了，则进行**故障恢复** - full open
+
+## 核心过程
+
+> 通过**滑动窗口**来记录异常状态
+> 
+1. 一开始所有实例都处于全开区
+2. 一个实例在一个滑动窗口内出现异常的次数超过 N 次，则进入隔离区
+3. 存在一个定时任务，每隔一段时间，将隔离区的实例拷贝一份到半开区
+4. 在每次请求时，一旦半开区有实例，则移除半开区中的一个实例用于探活
+5. 一旦探活成功，该实例回到全开区
+
+```java
+public class ZmInvocationHandler implements InvocationHandler {
+
+  final List<InstanceMeta> providers; // 全开区
+  List<InstanceMeta> isolatedProviders = new ArrayList<>(); // 隔离区
+  final List<InstanceMeta> halfOpenProviders = new ArrayList<>(); // 半开主要用于探活
+  final Map<String, SlidingTimeWindow> windows = new HashMap<>(); // 滑动窗口记录实例异常次数
+
+  public ZmInvocationHandler(
+      Class<?> service, RpcContext rpcContext, List<InstanceMeta> providers) {
+    this.providers = providers;
+
+    ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+    executor.scheduleWithFixedDelay(this::halfOpen, 10, 60, TimeUnit.SECONDS); // 定时拷贝实例：隔离区 -> 半开区（探活）
+  }
+
+  private void halfOpen() {
+    log.debug("===> half open isolatedProviders: " + isolatedProviders);
+    halfOpenProviders.clear();
+    halfOpenProviders.addAll(isolatedProviders);
+  }
+
+  // 模拟 HTTP 请求
+  @Override
+  public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    // 服务挡板
+    if (MethodUtils.checkLocalMethod(method)) {
+      // TBD，请求不发送到 Provider
+      return null;
+    }
+
+    RpcRequest rpcRequest = new RpcRequest();
+
+    // 重试策略 - 发生 SocketTimeoutException，则重新进行 LB
+    int retries = Integer.parseInt(rpcContext.getParameters().getOrDefault("app.retries", "1"));
+    while (retries-- > 0) {
+      log.debug("===> retries: {}", retries);
+      try {
+        List<Filter> filters = rpcContext.getFilters();
+        for (Filter filter : filters) {
+          Object filterResult = filter.preFilter(rpcRequest);
+          if (filterResult != null) { // cached or blocked
+            log.debug(
+                "{} ==> preFilter, filterResult: {}", filter.getClass().getName(), filterResult);
+            return filterResult;
+          }
+        }
+
+        // 重新进行 LB
+        boolean isHalfOpen = false;
+        InstanceMeta instance;
+        synchronized (halfOpenProviders) {
+          if (halfOpenProviders.isEmpty()) {
+            List<InstanceMeta> instances = rpcContext.getRouter().route(providers);
+            instance = rpcContext.getLoadBalancer().choose(instances);
+            log.debug("select ==> " + instance.toUrl());
+          } else {
+            // 探活 A1 -> A2 -> A3，逐个获取半开的实例来进行探活，一旦探活成功，回到全开状态
+            instance = halfOpenProviders.remove(0);
+            isHalfOpen = true;
+            log.debug("===> check alive, instance: {}", instance);
+          }
+        }
+
+        String url = instance.toUrl();
+        try {
+          rpcResponse = httpInvoker.post(rpcRequest, url);
+          result = castResult(method, rpcResponse);
+        } catch (Exception e) {
+          // 故障的规则统计和隔离
+          // 发生一次异常，记录一次，统计周期 30 秒
+          synchronized (windows) {
+            SlidingTimeWindow window = windows.get(url);
+            if (window == null) {
+              window = new SlidingTimeWindow();
+              windows.put(url, window);
+            }
+            window.record(System.currentTimeMillis());
+            log.debug("instance {} in window with {}", url, window.getSum());
+
+            // 异常发生超过 N 次，则做故障隔离
+            if (window.getSum() >= 10 && !isHalfOpen) {
+              isolate(instance);
+            }
+          }
+
+          throw e;
+        }
+
+        synchronized (providers) {
+          if (!providers.contains(instance)) {
+            // 此次请求为探活请求，探活成功，回到全开状态
+            isolatedProviders.remove(instance);
+            providers.add(instance);
+            log.debug(
+                "===> instance {} recovered, isolatedProviders={}, providers={}",
+                instance,
+                isolatedProviders,
+                providers);
+          }
+        }
+  }
+
+  // 隔离故障实例
+  private void isolate(InstanceMeta instance) {
+    log.debug("===> isolate instance: " + instance);
+    providers.remove(instance);
+    log.debug("===> providers: " + providers);
+    isolatedProviders.add(instance);
+    log.debug("===> isolatedProviders: " + isolatedProviders);
+  }
+}
+```
