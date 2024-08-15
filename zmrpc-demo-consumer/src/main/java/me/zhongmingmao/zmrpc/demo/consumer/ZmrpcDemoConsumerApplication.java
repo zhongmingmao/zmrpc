@@ -46,8 +46,10 @@ public class ZmrpcDemoConsumerApplication {
   public ApplicationRunner consumerRun() {
     return args -> {
       long start = System.currentTimeMillis();
-      userService.timeout(600);
+      userService.timeout(1100);
       System.out.println(System.currentTimeMillis() - start);
+
+      testAll();
     };
   }
 

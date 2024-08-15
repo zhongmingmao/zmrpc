@@ -6,6 +6,7 @@ import me.zhongmingmao.zmrpc.core.api.RpcRequest;
 import me.zhongmingmao.zmrpc.core.api.RpcResponse;
 import me.zhongmingmao.zmrpc.core.provider.ProviderConfig;
 import me.zhongmingmao.zmrpc.core.provider.ProviderInvoker;
+import me.zhongmingmao.zmrpc.demo.api.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
@@ -31,6 +32,17 @@ public class ZmrpcDemoProviderApplication {
   @RequestMapping("/")
   public RpcResponse<Object> invoke(@RequestBody RpcRequest request) {
     return providerInvoker.invoke(request);
+  }
+
+  @Autowired UserService userService;
+
+  @RequestMapping("/timeoutPorts")
+  public RpcResponse<String> setTimeoutPorts(String timeoutPorts) {
+    userService.setTimeoutPorts(timeoutPorts);
+    RpcResponse<String> response = new RpcResponse<>();
+    response.setStatus(true);
+    response.setData("OK - " + timeoutPorts);
+    return response;
   }
 
   // Spring 容器完全就绪后执行

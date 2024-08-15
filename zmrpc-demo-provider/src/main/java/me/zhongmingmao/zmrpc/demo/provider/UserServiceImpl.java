@@ -1,9 +1,10 @@
 package me.zhongmingmao.zmrpc.demo.provider;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import me.zhongmingmao.zmrpc.core.annotation.ZmProvider;
 import me.zhongmingmao.zmrpc.demo.api.User;
@@ -91,10 +92,12 @@ public class UserServiceImpl implements UserService {
     return users;
   }
 
+  @Setter String timeoutPorts = "8081";
+
   @SneakyThrows
   @Override
   public User timeout(int ms) {
-    if (Objects.equals("8081", port)) {
+    if (Arrays.stream(timeoutPorts.split(",")).anyMatch(port::equals)) {
       TimeUnit.MILLISECONDS.sleep(ms);
     }
 

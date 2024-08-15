@@ -34,4 +34,6 @@ public interface UserService {
   Map<String, User> getMap(Map<String, User> users);
 
   User timeout(int ms);
+
+  void setTimeoutPorts(String timeoutPorts);
 }
