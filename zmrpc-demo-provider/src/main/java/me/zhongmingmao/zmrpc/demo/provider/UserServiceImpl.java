@@ -84,11 +84,15 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public List<User> getList(List<User> users) {
+    Object[] array = users.toArray();
+    Arrays.stream(array).forEach(System.out::println);
+    users.add(new User(1024, "zzz"));
     return users;
   }
 
   @Override
   public Map<String, User> getMap(Map<String, User> users) {
+    users.put("zm", User.builder().id(99).name("zm").build());
     return users;
   }
 
@@ -97,7 +101,7 @@ public class UserServiceImpl implements UserService {
   @SneakyThrows
   @Override
   public User timeout(int ms) {
-    if (Arrays.stream(timeoutPorts.split(",")).anyMatch(port::equals)) {
+    if (Arrays.asList(timeoutPorts.split(",")).contains(port)) {
       TimeUnit.MILLISECONDS.sleep(ms);
     }
 
