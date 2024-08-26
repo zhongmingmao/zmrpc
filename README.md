@@ -74,6 +74,12 @@
 - [故障隔离](#故障隔离)
   - [实现机制](#实现机制)
   - [核心过程](#核心过程-1)
+- [灰度发布](#灰度发布)
+  - [为 Provider 打标](#为-provider-打标)
+  - [获取 Provider 打标信息](#获取-provider-打标信息)
+  - [灰度比例](#灰度比例)
+  - [GrayRouter](#grayrouter)
+  - [流量染色](#流量染色)
 
 # 服务提供者
 
@@ -2118,3 +2124,215 @@ public class ZmInvocationHandler implements InvocationHandler {
   }
 }
 ```
+
+# 灰度发布
+
+> 流量调拨
+> 
+
+## 为 Provider 打标
+
+> 将打包信息注册到 ZK
+> 
+
+```yaml
+app:
+  metas: "{dc:'gz',gray:'false',unit:'G001'}"
+```
+
+> 注入
+> 
+
+```java
+@Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class ProviderBootstrap implements ApplicationContextAware {
+
+  // ${app.metas} 取字符串 "{dc:'gz',gray:'false',unit:'G001'}"
+  // #{${app.metas}} 为 SpEL - Spring Expression Language - JSON to Map
+  @Value("#{${app.metas}}")
+  Map<String, String> metas;
+
+  @SneakyThrows
+  public void start() {
+    // 获取本机 IP
+    String ip = InetAddress.getLocalHost().getHostAddress();
+    instance = InstanceMeta.http(ip, Integer.parseInt(port));
+    instance.getParameters().putAll(metas);
+
+    // 启动注册中心
+    registryCenter.start();
+
+    // 注册服务
+    skeleton.keySet().forEach(this::registerService);
+  }
+}
+```
+
+> 服务注册 - ZkRegistryCenter - instance.toMetas()
+> 
+
+```java
+@Slf4j
+public class ZkRegistryCenter implements RegistryCenter {
+
+  @Override
+  public void register(ServiceMeta service, InstanceMeta instance) {
+    String servicePath = "/" + service.toZkPath();
+
+    try {
+      // service 注册为持久化节点
+      if (client.checkExists().forPath(servicePath) == null) {
+        client.create().withMode(CreateMode.PERSISTENT).forPath(servicePath, "service".getBytes());
+      }
+
+      // instance 注册为临时节点 - 不断变化
+      String instancePath = servicePath + "/" + instance.toZkPath();
+      if (client.checkExists().forPath(instancePath) == null) {
+        log.info("===> register to zk, instancePath: " + instancePath);
+        client
+            .create()
+            .withMode(CreateMode.EPHEMERAL)
+            .forPath(instancePath, instance.toMetas().getBytes());
+      }
+    } catch (Exception e) {
+      throw new RpcException(e, RpcException.ZookeeperException);
+    }
+  }
+}
+```
+
+## 获取 Provider 打标信息
+
+> 从 ZK 获取打标信息
+> 
+
+```java
+  @Override
+  public List<InstanceMeta> fetchAll(ServiceMeta service) {
+    String servicePath = "/" + service.toZkPath();
+
+    try {
+      // 获取所有子节点
+      List<String> nodes = client.getChildren().forPath(servicePath);
+      System.out.printf(
+          "===> fetchAll from zk, servicePath: %s, instances: %s%n", servicePath, nodes);
+
+      return buildInstances(client, servicePath, nodes);
+    } catch (Exception e) {
+      throw new RpcException(e, RpcException.ZookeeperException);
+    }
+  }
+
+  @NotNull
+  private static List<InstanceMeta> buildInstances(
+      CuratorFramework client, String servicePath, List<String> nodes) {
+    return nodes.stream()
+        .map(
+            node -> {
+              String[] array = node.split("_");
+              InstanceMeta instanceMeta = InstanceMeta.http(array[0], Integer.parseInt(array[1]));
+
+              byte[] bytes;
+              try {
+                String nodePath = servicePath + "/" + node;
+                bytes = client.getData().forPath(nodePath);
+              } catch (Exception e) {
+                throw new RuntimeException(e);
+              }
+              instanceMeta.setParameters(JSON.parseObject(new String(bytes), HashMap.class));
+
+              return instanceMeta;
+            })
+        .collect(Collectors.toList());
+  }
+```
+
+## 灰度比例
+
+> Consumer
+> 
+
+```yaml
+app:
+  grayRatio: 10 # 1 ~ 100
+```
+
+## GrayRouter
+
+> ConsumerConfig
+> 
+
+```java
+@Slf4j
+@Configuration
+public class ConsumerConfig {
+
+  @Value("${app.grayRatio}")
+  int grayRatio;
+  
+    @Bean
+  public Router<InstanceMeta> router() {
+    return new GrayRouter(grayRatio);
+  }
+  
+}
+```
+
+> Impl - **需要与 LB 解耦，不能假设 LB 一定是均匀的** - 借助**随机数**实现
+> 
+
+```java
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class GrayRouter implements Router<InstanceMeta> {
+
+  int grayRatio;
+  Random random = new Random();
+
+  public GrayRouter(int grayRatio) {
+    this.grayRatio = grayRatio;
+  }
+
+  @Override
+  public List<InstanceMeta> route(List<InstanceMeta> providers) {
+    if (CollectionUtils.isEmpty(providers) || providers.size() == 1) {
+      return providers;
+    }
+
+    List<InstanceMeta> normalInstances = new ArrayList<>();
+    List<InstanceMeta> grayInstances = new ArrayList<>();
+
+    providers.forEach(
+        instance -> {
+          if (Objects.equals("true", instance.getParameters().get("gray"))) {
+            grayInstances.add(instance);
+          } else {
+            normalInstances.add(instance);
+          }
+        });
+
+    if (CollectionUtils.isEmpty(normalInstances) || CollectionUtils.isEmpty(grayInstances)) {
+      return providers;
+    }
+
+    if (grayRatio <= 0) {
+      return normalInstances;
+    }
+    if (grayRatio >= 100) {
+      return grayInstances;
+    }
+
+    // 需要与 LB 解耦，不能假设 LB 一定是均匀的
+    // 在 A 情况下，返回 normalInstances；在 B 情况下，返回 grayInstances
+    if (random.nextInt(100) < grayRatio) {
+      return grayInstances;
+    } else {
+      return normalInstances;
+    }
+  }
+}
+```
+
+## 流量染色
+
+> 全链路灰度 TBD
