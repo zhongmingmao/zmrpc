@@ -1,11 +1,14 @@
 package me.zhongmingmao.zmrpc.core.provider;
 
+import com.alibaba.fastjson.JSON;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
-
-import java.util.Map;
 
 @Data
 @Builder
@@ -29,6 +32,16 @@ public class InstanceMeta {
   }
 
   public static InstanceMeta http(String host, Integer port) {
-    return InstanceMeta.builder().scheme("http").host(host).port(port).context("").build();
+    return InstanceMeta.builder()
+        .scheme("http")
+        .host(host)
+        .port(port)
+        .context("")
+        .parameters(new HashMap<>())
+        .build();
+  }
+
+  public String toMetas() {
+    return JSON.toJSONString(Optional.ofNullable(parameters).orElse(Collections.emptyMap()));
   }
 }

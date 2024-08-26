@@ -1,5 +1,7 @@
 package me.zhongmingmao.zmrpc.core.registry.zk;
 
+import com.alibaba.fastjson.JSON;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
@@ -63,7 +65,10 @@ public class ZkRegistryCenter implements RegistryCenter {
       String instancePath = servicePath + "/" + instance.toZkPath();
       if (client.checkExists().forPath(instancePath) == null) {
         log.info("===> register to zk, instancePath: " + instancePath);
-        client.create().withMode(CreateMode.EPHEMERAL).forPath(instancePath, "provider".getBytes());
+        client
+            .create()
+            .withMode(CreateMode.EPHEMERAL)
+            .forPath(instancePath, instance.toMetas().getBytes());
       }
     } catch (Exception e) {
       throw new RpcException(e, RpcException.ZookeeperException);
@@ -103,19 +108,33 @@ public class ZkRegistryCenter implements RegistryCenter {
       System.out.printf(
           "===> fetchAll from zk, servicePath: %s, instances: %s%n", servicePath, nodes);
 
-      return buildInstances(nodes);
+      return buildInstances(client, servicePath, nodes);
     } catch (Exception e) {
       throw new RpcException(e, RpcException.ZookeeperException);
     }
   }
 
   @NotNull
-  private static List<InstanceMeta> buildInstances(List<String> nodes) {
+  private static List<InstanceMeta> buildInstances(
+      CuratorFramework client, String servicePath, List<String> nodes) {
     return nodes.stream()
         .map(
             node -> {
               String[] array = node.split("_");
-              return InstanceMeta.http(array[0], Integer.parseInt(array[1]));
+              InstanceMeta instanceMeta = InstanceMeta.http(array[0], Integer.parseInt(array[1]));
+
+              byte[] bytes;
+              try {
+                String nodePath = servicePath + "/" + node;
+                bytes = client.getData().forPath(nodePath);
+              } catch (Exception e) {
+                throw new RuntimeException(e);
+              }
+              HashMap parameters = JSON.parseObject(new String(bytes), HashMap.class);
+              log.debug("instance, url: {}, parameters: {}", instanceMeta.toUrl(), parameters);
+              instanceMeta.setParameters(parameters);
+
+              return instanceMeta;
             })
         .collect(Collectors.toList());
   }

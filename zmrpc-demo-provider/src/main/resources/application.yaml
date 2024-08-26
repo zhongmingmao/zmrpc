@@ -13,6 +13,7 @@ app:
   id: app1
   namespace: public
   env: dev
+  metas: "{dc:'gz',gray:'false',unit:'G001'}"
 
 logging:
   level:

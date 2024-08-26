@@ -45,6 +45,11 @@ public class ProviderBootstrap implements ApplicationContextAware {
   @Value("${app.env}")
   String env;
 
+  // ${app.metas} 取字符串 "{dc:'gz',gray:'false',unit:'G001'}"
+  // #{${app.metas}} 为 SpEL - Spring Expression Language - JSON to Map
+  @Value("#{${app.metas}}")
+  Map<String, String> metas;
+
   @PostConstruct // init-method
   public void init() {
     registryCenter = applicationContext.getBean(RegistryCenter.class);
@@ -58,12 +63,13 @@ public class ProviderBootstrap implements ApplicationContextAware {
   // 由 ApplicationRunner 触发，此时 ApplicationContext 已完全就绪，此时可以接收请求，即延迟注册
   @SneakyThrows
   public void start() {
-    // 启动注册中心
-    registryCenter.start();
-
     // 获取本机 IP
     String ip = InetAddress.getLocalHost().getHostAddress();
     instance = InstanceMeta.http(ip, Integer.parseInt(port));
+    instance.getParameters().putAll(metas);
+
+    // 启动注册中心
+    registryCenter.start();
 
     // 注册服务
     skeleton.keySet().forEach(this::registerService);
