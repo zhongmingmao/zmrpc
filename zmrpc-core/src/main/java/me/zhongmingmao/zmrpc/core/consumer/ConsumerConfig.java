@@ -7,7 +7,9 @@ import me.zhongmingmao.zmrpc.core.api.Router;
 import me.zhongmingmao.zmrpc.core.cluster.RoundRobinLoadBalancer;
 import me.zhongmingmao.zmrpc.core.provider.InstanceMeta;
 import me.zhongmingmao.zmrpc.core.registry.zk.ZkRegistryCenter;
+import me.zhongmingmao.zmrpc.core.router.GrayRouter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +18,9 @@ import org.springframework.core.annotation.Order;
 @Slf4j
 @Configuration
 public class ConsumerConfig {
+
+  @Value("${app.grayRatio}")
+  int grayRatio;
 
   @Bean
   public ConsumerBootstrap consumerBootstrap() {
@@ -50,7 +55,7 @@ public class ConsumerConfig {
 
   @Bean
   public Router<InstanceMeta> router() {
-    return Router.DEFAULT;
+    return new GrayRouter(grayRatio);
   }
 
   // 定义注册中心的启动关闭钩子

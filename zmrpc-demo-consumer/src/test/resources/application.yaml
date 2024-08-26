@@ -16,6 +16,7 @@ app:
   retries: 2
   timeout: 1000
   metas: "{dc:'gz',gray:'false',unit:'G001'}"
+  grayRatio: 10 # 1 ~ 100
 
 logging:
   level:
