@@ -1,0 +1,23 @@
+### Get User Info
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "service": "ai.zhongmingmao.zmrpc.demo.api.UserService",
+  "method": "findById",
+  "args": [
+    1
+  ]
+}
+
+### Get Order Info
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "service": "ai.zhongmingmao.zmrpc.demo.api.OrderService",
+  "method": "findById",
+  "args": [
+    1
+  ]
+}

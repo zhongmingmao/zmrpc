@@ -1,0 +1,18 @@
+package ai.zhongmingmao.zmrpc.demo.provider;
+
+import ai.zhongmingmao.zmrpc.core.annotation.ZmProvider;
+import ai.zhongmingmao.zmrpc.demo.api.User;
+import ai.zhongmingmao.zmrpc.demo.api.UserService;
+import org.springframework.stereotype.Component;
+
+@Component
+@ZmProvider
+public class UserServiceImpl implements UserService {
+
+  private static final String NAME = "zhongmingmao";
+
+  @Override
+  public User findById(int id) {
+    return User.builder().id(id).name("%s-%d".formatted(NAME, System.currentTimeMillis())).build();
+  }
+}
