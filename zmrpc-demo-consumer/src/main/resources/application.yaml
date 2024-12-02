@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: zmrpc-demo-consumer
+server:
+  port: 8088

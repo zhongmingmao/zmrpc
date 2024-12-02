@@ -29,7 +29,7 @@ public class ZmrpcDemoProviderApplication {
   }
 
   @Bean
-  ApplicationRunner runner() {
+  ApplicationRunner providerRunner() {
     return args -> {
       RpcRequest request =
           RpcRequest.builder()

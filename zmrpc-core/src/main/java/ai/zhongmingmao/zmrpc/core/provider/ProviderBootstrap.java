@@ -22,7 +22,7 @@ public class ProviderBootstrap implements ApplicationContextAware {
 
   ApplicationContext applicationContext;
 
-  private Map<String, Object> skeleton = Maps.newHashMap();
+  Map<String, Object> skeleton = Maps.newHashMap();
 
   @PostConstruct
   public void buildProviders() {
@@ -36,13 +36,29 @@ public class ProviderBootstrap implements ApplicationContextAware {
   }
 
   public RpcResponse invoke(RpcRequest request) {
+    String methodName = request.getMethod();
+    if ("toString".equals(methodName)
+        || "getClass".equals(methodName)
+        || "notify".equals(methodName)
+        || "notifyAll".equals(methodName)
+        || "wait".equals(methodName)
+        || "hashCode".equals(methodName)
+        || "equals".equals(methodName)) {
+      return null;
+    }
+
     Object bean = skeleton.get(request.getService());
     try {
       Method method = findMethod(bean, request.getMethod());
       Object result = method.invoke(bean, request.getArgs());
       return RpcResponse.builder().status(true).data(result).build();
-    } catch (InvocationTargetException | IllegalAccessException e) {
-      throw new RuntimeException(e);
+    } catch (InvocationTargetException e) {
+      return RpcResponse.builder()
+          .status(false)
+          .ex(new RuntimeException(e.getTargetException().getMessage()))
+          .build();
+    } catch (IllegalAccessException e) {
+      return RpcResponse.builder().status(false).ex(new RuntimeException(e.getMessage())).build();
     }
   }
 

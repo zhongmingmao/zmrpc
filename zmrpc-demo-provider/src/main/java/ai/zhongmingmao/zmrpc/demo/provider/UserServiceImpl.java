@@ -15,4 +15,14 @@ public class UserServiceImpl implements UserService {
   public User findById(int id) {
     return User.builder().id(id).name("%s-%d".formatted(NAME, System.currentTimeMillis())).build();
   }
+
+  @Override
+  public int getId(int id) {
+    return id;
+  }
+
+  @Override
+  public String getName() {
+    return "%s-%d".formatted(NAME, System.currentTimeMillis());
+  }
 }

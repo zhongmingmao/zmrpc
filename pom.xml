@@ -26,6 +26,7 @@
 
         <module>zmrpc-demo-api</module>
         <module>zmrpc-demo-provider</module>
+        <module>zmrpc-demo-consumer</module>
     </modules>
 
 </project>

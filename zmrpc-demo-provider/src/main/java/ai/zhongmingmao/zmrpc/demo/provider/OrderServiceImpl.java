@@ -11,6 +11,9 @@ public class OrderServiceImpl implements OrderService {
 
   @Override
   public Order findById(Integer id) {
+    if (id == 404) {
+      throw new RuntimeException("404 exception");
+    }
     return Order.builder().id(id).amount(0.99F).build();
   }
 }
