@@ -2,6 +2,7 @@ package ai.zhongmingmao.zmrpc.core.consumer;
 
 import ai.zhongmingmao.zmrpc.core.api.RpcRequest;
 import ai.zhongmingmao.zmrpc.core.api.RpcResponse;
+import ai.zhongmingmao.zmrpc.core.utils.MethodUtils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import java.io.IOException;
@@ -24,26 +25,16 @@ public class ZmInvocationHandler implements InvocationHandler {
 
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-
-    String name = method.getName();
-    if ("toString".equals(name)
-        || "getClass".equals(name)
-        || "notify".equals(name)
-        || "notifyAll".equals(name)
-        || "wait".equals(name)) {
+    if (MethodUtils.checkLocalMethod(method)) {
       return null;
     }
 
-    if ("hashCode".equals(name)) {
-      return 0;
-    }
-
-    if ("equals".equals(name)) {
-      return false;
-    }
-
     RpcRequest request =
-        RpcRequest.builder().service(service.getCanonicalName()).method(name).args(args).build();
+        RpcRequest.builder()
+            .service(service.getCanonicalName())
+            .methodSign(MethodUtils.methodSign(method))
+            .args(args)
+            .build();
 
     RpcResponse response = post(request);
     if (response.isStatus()) {

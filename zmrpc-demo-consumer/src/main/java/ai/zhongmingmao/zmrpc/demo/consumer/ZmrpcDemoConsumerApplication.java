@@ -26,23 +26,23 @@ public class ZmrpcDemoConsumerApplication {
   @Bean
   ApplicationRunner consumerRunner() {
     return args -> {
-      User user = userService.findById(1);
-      System.out.println("rpc result, userService.findById(1) = " + user);
+      User u1 = userService.findById(1);
+      System.out.println("rpc result, userService.findById(1) = " + u1);
+
+      User u2 = userService.findById(2, "zhongmingmao");
+      System.out.println("rpc result, userService.findById(2, \"zhongmingmao\") = " + u2);
 
       int id = userService.getId(11);
       System.out.println("rpc result, userService.getId(11) = " + id);
 
-      String name = userService.getName();
-      System.out.println("rpc result, userService.getName() = " + name);
+      String n1 = userService.getName();
+      System.out.println("rpc result, userService.getName() = " + n1);
 
-      System.out.println("-----");
+      String n2 = userService.getName(123);
+      System.out.println("rpc result, userService.getName(123) = " + n2);
+
       String string = userService.toString();
       System.out.println("rpc result, userService.toString() = " + string);
-      int hashCode = userService.hashCode();
-      System.out.println("rpc result, userService.hashCode() = " + hashCode);
-      boolean equals = userService.equals(userService);
-      System.out.println("rpc result, userService.equals(null) = " + equals);
-      System.out.println("-----");
 
       Order order = orderService.findById(1);
       System.out.println("rpc result, orderService.findById(1) = " + order);

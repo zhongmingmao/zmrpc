@@ -4,7 +4,7 @@ Content-Type: application/json
 
 {
   "service": "ai.zhongmingmao.zmrpc.demo.api.UserService",
-  "method": "findById",
+  "methodSign": "findById@1_int",
   "args": [
     1
   ]
@@ -16,7 +16,7 @@ Content-Type: application/json
 
 {
   "service": "ai.zhongmingmao.zmrpc.demo.api.OrderService",
-  "method": "findById",
+  "methodSign": "findById@1_java.lang.Integer",
   "args": [
     1
   ]

@@ -3,15 +3,20 @@ package ai.zhongmingmao.zmrpc.core.provider;
 import ai.zhongmingmao.zmrpc.core.annotation.ZmProvider;
 import ai.zhongmingmao.zmrpc.core.api.RpcRequest;
 import ai.zhongmingmao.zmrpc.core.api.RpcResponse;
-import com.google.common.collect.Maps;
+import ai.zhongmingmao.zmrpc.core.meta.ProviderMeta;
+import ai.zhongmingmao.zmrpc.core.utils.MethodUtils;
 import jakarta.annotation.PostConstruct;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 @Data
 @Builder
@@ -22,35 +27,43 @@ public class ProviderBootstrap implements ApplicationContextAware {
 
   ApplicationContext applicationContext;
 
-  Map<String, Object> skeleton = Maps.newHashMap();
+  MultiValueMap<String, ProviderMeta> skeleton = new LinkedMultiValueMap<>();
 
   @PostConstruct
-  public void buildProviders() {
+  public void start() {
     Map<String, Object> providers = applicationContext.getBeansWithAnnotation(ZmProvider.class);
     providers.forEach((name, bean) -> System.out.println(name));
-    providers.values().forEach(bean -> skeleton.putIfAbsent(generateInterface(bean), bean));
+    providers
+        .values()
+        .forEach(
+            bean -> {
+              Class<?> serviceInterface = bean.getClass().getInterfaces()[0];
+              for (Method method : serviceInterface.getMethods()) {
+                if (!MethodUtils.checkLocalMethod(method)) {
+                  createProvider(serviceInterface, bean, method);
+                }
+              }
+            });
   }
 
-  private String generateInterface(Object bean) {
-    return bean.getClass().getInterfaces()[0].getCanonicalName();
+  private void createProvider(Class<?> serviceInterface, Object bean, Method method) {
+    ProviderMeta providerMeta =
+        ProviderMeta.builder()
+            .method(method)
+            .serviceImpl(bean)
+            .methodSign(MethodUtils.methodSign(method))
+            .build();
+    System.out.println("createProvider, providerMeta: " + providerMeta);
+    skeleton.add(serviceInterface.getCanonicalName(), providerMeta);
   }
 
   public RpcResponse invoke(RpcRequest request) {
-    String methodName = request.getMethod();
-    if ("toString".equals(methodName)
-        || "getClass".equals(methodName)
-        || "notify".equals(methodName)
-        || "notifyAll".equals(methodName)
-        || "wait".equals(methodName)
-        || "hashCode".equals(methodName)
-        || "equals".equals(methodName)) {
-      return null;
-    }
-
-    Object bean = skeleton.get(request.getService());
+    String methodSign = request.getMethodSign();
+    List<ProviderMeta> providerMetas = skeleton.get(request.getService());
     try {
-      Method method = findMethod(bean, request.getMethod());
-      Object result = method.invoke(bean, request.getArgs());
+      ProviderMeta providerMeta = findProviderMeta(providerMetas, methodSign);
+      Method method = providerMeta.getMethod();
+      Object result = method.invoke(providerMeta.getServiceImpl(), request.getArgs());
       return RpcResponse.builder().status(true).data(result).build();
     } catch (InvocationTargetException e) {
       return RpcResponse.builder()
@@ -62,12 +75,10 @@ public class ProviderBootstrap implements ApplicationContextAware {
     }
   }
 
-  private Method findMethod(Object bean, String methodName) {
-    for (Method method : bean.getClass().getMethods()) {
-      if (method.getName().equals(methodName)) {
-        return method;
-      }
-    }
-    return null;
+  private ProviderMeta findProviderMeta(List<ProviderMeta> providerMetas, String methodSign) {
+    return providerMetas.stream()
+        .filter(providerMeta -> Objects.equals(methodSign, providerMeta.getMethodSign()))
+        .findFirst()
+        .orElse(null);
   }
 }

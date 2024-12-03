@@ -34,10 +34,19 @@ public class ZmrpcDemoProviderApplication {
       RpcRequest request =
           RpcRequest.builder()
               .service("ai.zhongmingmao.zmrpc.demo.api.UserService")
-              .method("findById")
+              .methodSign("findById@1_int")
               .args(new Object[] {1})
               .build();
       RpcResponse<?> response = providerBootstrap.invoke(request);
+      System.out.println(response.getData());
+
+      request =
+          RpcRequest.builder()
+              .service("ai.zhongmingmao.zmrpc.demo.api.UserService")
+              .methodSign("findById@2_int_java.lang.String")
+              .args(new Object[] {2, "zhongmingmao"})
+              .build();
+      response = providerBootstrap.invoke(request);
       System.out.println(response.getData());
     };
   }
