@@ -38,10 +38,11 @@ public class ProviderBootstrap implements ApplicationContextAware {
         .values()
         .forEach(
             bean -> {
-              Class<?> serviceInterface = bean.getClass().getInterfaces()[0];
-              for (Method method : serviceInterface.getMethods()) {
-                if (!MethodUtils.checkLocalMethod(method)) {
-                  createProvider(serviceInterface, bean, method);
+              for (Class<?> serviceInterface : bean.getClass().getInterfaces()) {
+                for (Method method : serviceInterface.getMethods()) {
+                  if (!MethodUtils.checkLocalMethod(method)) {
+                    createProvider(serviceInterface, bean, method);
+                  }
                 }
               }
             });
