@@ -4,6 +4,7 @@ import ai.zhongmingmao.zmrpc.core.annotation.ZmProvider;
 import ai.zhongmingmao.zmrpc.core.api.RpcRequest;
 import ai.zhongmingmao.zmrpc.core.api.RpcResponse;
 import ai.zhongmingmao.zmrpc.core.meta.ProviderMeta;
+import ai.zhongmingmao.zmrpc.core.ut.TypeUtils;
 import ai.zhongmingmao.zmrpc.core.utils.MethodUtils;
 import jakarta.annotation.PostConstruct;
 import java.lang.reflect.InvocationTargetException;
@@ -63,7 +64,8 @@ public class ProviderBootstrap implements ApplicationContextAware {
     try {
       ProviderMeta providerMeta = findProviderMeta(providerMetas, methodSign);
       Method method = providerMeta.getMethod();
-      Object result = method.invoke(providerMeta.getServiceImpl(), request.getArgs());
+      Object[] args = processArgs(request.getArgs(), method.getParameterTypes());
+      Object result = method.invoke(providerMeta.getServiceImpl(), args);
       return RpcResponse.builder().status(true).data(result).build();
     } catch (InvocationTargetException e) {
       return RpcResponse.builder()
@@ -80,5 +82,17 @@ public class ProviderBootstrap implements ApplicationContextAware {
         .filter(providerMeta -> Objects.equals(methodSign, providerMeta.getMethodSign()))
         .findFirst()
         .orElse(null);
+  }
+
+  private Object[] processArgs(Object[] args, Class<?>[] parameterTypes) {
+    if (args == null || args.length == 0) {
+      return args;
+    }
+
+    Object[] targetArgs = new Object[args.length];
+    for (int i = 0; i < args.length; i++) {
+      targetArgs[i] = TypeUtils.cast(args[i], parameterTypes[i]);
+    }
+    return targetArgs;
   }
 }

@@ -32,8 +32,25 @@ public class ZmrpcDemoConsumerApplication {
       User u2 = userService.findById(2, "zhongmingmao");
       System.out.println("rpc result, userService.findById(2, \"zhongmingmao\") = " + u2);
 
-      int id = userService.getId(11);
-      System.out.println("rpc result, userService.getId(11) = " + id);
+      long id1 = userService.getId(11);
+      System.out.println("rpc result, userService.getId(11) = " + id1);
+
+      long id2 = userService.getId(User.builder().id(789).build());
+      System.out.println("rpc result, userService.getId(User.builder().id(789).build()) = " + id2);
+
+      long id3 = userService.getId(123.456f);
+      System.out.println("rpc result, userService.getId(123.456f) = " + id3);
+
+      int[] ids1 = userService.getIds();
+      System.out.println("rpc result, userService.getIds() = " + java.util.Arrays.toString(ids1));
+
+      int[] ids2 = userService.getIds(new int[] {1, 5});
+      System.out.println(
+          "rpc result, userService.getIds(new int[]{1, 5}) = " + java.util.Arrays.toString(ids2));
+
+      long[] longIds = userService.getLongIds();
+      System.out.println(
+          "rpc result, userService.getLongIds() = " + java.util.Arrays.toString(longIds));
 
       String n1 = userService.getName();
       System.out.println("rpc result, userService.getName() = " + n1);

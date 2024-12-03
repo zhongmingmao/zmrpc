@@ -3,7 +3,7 @@ package ai.zhongmingmao.zmrpc.core.utils;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
-public class MethodUtils {
+public final class MethodUtils {
 
   public static boolean checkLocalMethod(Method method) {
     return method.getDeclaringClass().equals(Object.class);

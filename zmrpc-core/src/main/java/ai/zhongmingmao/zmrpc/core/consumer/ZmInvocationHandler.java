@@ -2,10 +2,13 @@ package ai.zhongmingmao.zmrpc.core.consumer;
 
 import ai.zhongmingmao.zmrpc.core.api.RpcRequest;
 import ai.zhongmingmao.zmrpc.core.api.RpcResponse;
+import ai.zhongmingmao.zmrpc.core.ut.TypeUtils;
 import ai.zhongmingmao.zmrpc.core.utils.MethodUtils;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
@@ -39,12 +42,21 @@ public class ZmInvocationHandler implements InvocationHandler {
     RpcResponse response = post(request);
     if (response.isStatus()) {
       Object data = response.getData();
-      if (data instanceof JSONObject) {
-        JSONObject jsonResult = (JSONObject) response.getData();
+
+      if (data instanceof JSONObject jsonResult) {
         return jsonResult.toJavaObject(method.getReturnType());
-      } else {
-        return data;
       }
+
+      if (data instanceof JSONArray jsonArray) {
+        Class<?> componentType = method.getReturnType().getComponentType();
+        Object array = Array.newInstance(componentType, jsonArray.size());
+        for (int i = 0; i < jsonArray.size(); i++) {
+          Array.set(array, i, TypeUtils.cast(jsonArray.get(i), componentType));
+        }
+        return array;
+      }
+
+      return TypeUtils.cast(data, method.getReturnType());
     }
 
     Exception ex = response.getEx();

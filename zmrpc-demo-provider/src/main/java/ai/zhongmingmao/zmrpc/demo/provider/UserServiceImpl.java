@@ -22,8 +22,33 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public int getId(int id) {
+  public long getId(long id) {
     return id;
+  }
+
+  @Override
+  public long getId(User user) {
+    return user.getId();
+  }
+
+  @Override
+  public long getId(float id) {
+    return (long) id;
+  }
+
+  @Override
+  public int[] getIds() {
+    return new int[] {4, 5, 6};
+  }
+
+  @Override
+  public int[] getIds(int[] ids) {
+    return ids;
+  }
+
+  @Override
+  public long[] getLongIds() {
+    return new long[] {7, 19};
   }
 
   @Override

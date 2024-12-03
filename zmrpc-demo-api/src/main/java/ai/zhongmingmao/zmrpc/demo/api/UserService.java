@@ -6,7 +6,17 @@ public interface UserService {
 
   User findById(int id, String name);
 
-  int getId(int id);
+  long getId(long id);
+
+  long getId(User user);
+
+  long getId(float id);
+
+  int[] getIds();
+
+  int[] getIds(int[] ids);
+
+  long[] getLongIds();
 
   String getName();
 
