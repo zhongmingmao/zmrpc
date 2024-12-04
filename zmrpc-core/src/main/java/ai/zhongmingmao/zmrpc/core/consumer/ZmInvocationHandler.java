@@ -9,9 +9,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -60,8 +58,14 @@ public class ZmInvocationHandler implements InvocationHandler {
           return array;
         }
         if (List.class.isAssignableFrom(returnType)) {
-          List list = Lists.newArrayList();
-          list.addAll(jsonArray);
+          List list = Lists.newArrayList(jsonArray.size());
+          if (method.getGenericReturnType() instanceof ParameterizedType parameterizedType) {
+            Type actualType = parameterizedType.getActualTypeArguments()[0];
+            list.addAll(
+                jsonArray.stream().map(o -> TypeUtils.cast(o, (Class<?>) actualType)).toList());
+          } else {
+            list.addAll(jsonArray);
+          }
           return list;
         }
       }
