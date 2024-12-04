@@ -5,6 +5,9 @@ import ai.zhongmingmao.zmrpc.demo.api.User;
 import ai.zhongmingmao.zmrpc.demo.api.UserService;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.Map;
+
 @Component
 @ZmProvider
 public class UserServiceImpl implements UserService {
@@ -49,6 +52,16 @@ public class UserServiceImpl implements UserService {
   @Override
   public long[] getLongIds() {
     return new long[] {7, 19};
+  }
+
+  @Override
+  public List<User> getUsers(List<User> users) {
+    return users;
+  }
+
+  @Override
+  public Map<String, User> getUsers(Map<String, User> users) {
+    return users;
   }
 
   @Override

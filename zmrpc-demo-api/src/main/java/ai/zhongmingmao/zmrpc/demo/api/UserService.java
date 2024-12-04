@@ -1,5 +1,8 @@
 package ai.zhongmingmao.zmrpc.demo.api;
 
+import java.util.List;
+import java.util.Map;
+
 public interface UserService {
 
   User findById(int id);
@@ -17,6 +20,10 @@ public interface UserService {
   int[] getIds(int[] ids);
 
   long[] getLongIds();
+
+  List<User> getUsers(List<User> users);
+
+  Map<String, User> getUsers(Map<String, User> users);
 
   String getName();
 

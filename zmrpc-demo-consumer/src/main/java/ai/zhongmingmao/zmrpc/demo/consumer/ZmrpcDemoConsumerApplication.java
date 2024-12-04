@@ -12,6 +12,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
+import java.util.List;
+import java.util.Map;
+
 @SpringBootApplication
 @Import({ConsumerConfig.class})
 public class ZmrpcDemoConsumerApplication {
@@ -51,6 +54,14 @@ public class ZmrpcDemoConsumerApplication {
       long[] longIds = userService.getLongIds();
       System.out.println(
           "rpc result, userService.getLongIds() = " + java.util.Arrays.toString(longIds));
+
+      List<User> users =
+          userService.getUsers(List.of(User.builder().id(1).name("zhongmingmao").build()));
+      System.out.println("rpc result, userService.getUsers() = " + users);
+
+      Map<String, User> userMap =
+          userService.getUsers(Map.of("1", User.builder().id(1).name("zhongmingmao").build()));
+      System.out.println("rpc result, userService.getUsers() = " + userMap);
 
       String n1 = userService.getName();
       System.out.println("rpc result, userService.getName() = " + n1);
