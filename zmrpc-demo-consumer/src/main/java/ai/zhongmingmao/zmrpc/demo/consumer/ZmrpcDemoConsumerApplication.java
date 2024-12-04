@@ -6,15 +6,17 @@ import ai.zhongmingmao.zmrpc.demo.api.Order;
 import ai.zhongmingmao.zmrpc.demo.api.OrderService;
 import ai.zhongmingmao.zmrpc.demo.api.User;
 import ai.zhongmingmao.zmrpc.demo.api.UserService;
+import java.util.List;
+import java.util.Map;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.Map;
-
+@RestController
 @SpringBootApplication
 @Import({ConsumerConfig.class})
 public class ZmrpcDemoConsumerApplication {
@@ -25,6 +27,11 @@ public class ZmrpcDemoConsumerApplication {
 
   @ZmConsumer UserService userService;
   @ZmConsumer OrderService orderService;
+
+  @GetMapping("/")
+  public User invoke(int id) {
+    return userService.findById(id);
+  }
 
   @Bean
   ApplicationRunner consumerRunner() {

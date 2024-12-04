@@ -1,7 +1,6 @@
 package ai.zhongmingmao.zmrpc.core.consumer;
 
-import ai.zhongmingmao.zmrpc.core.api.RpcRequest;
-import ai.zhongmingmao.zmrpc.core.api.RpcResponse;
+import ai.zhongmingmao.zmrpc.core.api.*;
 import ai.zhongmingmao.zmrpc.core.ut.TypeUtils;
 import ai.zhongmingmao.zmrpc.core.utils.MethodUtils;
 import com.alibaba.fastjson.JSON;
@@ -14,17 +13,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import okhttp3.*;
 
+@AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ZmInvocationHandler implements InvocationHandler {
 
   Class<?> service;
-
-  public ZmInvocationHandler(Class<?> service) {
-    this.service = service;
-  }
+  RpcContext context;
+  List<String> providers;
 
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -39,7 +38,10 @@ public class ZmInvocationHandler implements InvocationHandler {
             .args(args)
             .build();
 
-    RpcResponse response = post(request);
+    String provider =
+        (String) context.getLoadBalancer().choose(context.getRouter().choose(providers));
+    System.out.println("choose provider: " + provider);
+    RpcResponse response = post(request, buildUri(provider));
     if (response.isStatus()) {
       Object data = response.getData();
 
@@ -77,6 +79,10 @@ public class ZmInvocationHandler implements InvocationHandler {
     throw new RuntimeException(ex);
   }
 
+  private String buildUri(String provider) {
+    return "%s/".formatted(provider);
+  }
+
   static final MediaType JSON_TYPE = MediaType.get("application/json; charset=utf-8");
 
   OkHttpClient client =
@@ -87,11 +93,11 @@ public class ZmInvocationHandler implements InvocationHandler {
           .writeTimeout(1, TimeUnit.SECONDS)
           .build();
 
-  private RpcResponse post(RpcRequest rpcRequest) {
+  private RpcResponse post(RpcRequest rpcRequest, String uri) {
     String requestJson = JSON.toJSONString(rpcRequest);
     Request request =
         new Request.Builder()
-            .url("http://localhost:8080/")
+            .url(uri)
             .post(RequestBody.create(requestJson.getBytes(StandardCharsets.UTF_8), JSON_TYPE))
             .build();
 
