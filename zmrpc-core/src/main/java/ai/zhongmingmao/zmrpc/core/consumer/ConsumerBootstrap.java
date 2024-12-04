@@ -2,9 +2,9 @@ package ai.zhongmingmao.zmrpc.core.consumer;
 
 import ai.zhongmingmao.zmrpc.core.annotation.ZmConsumer;
 import ai.zhongmingmao.zmrpc.core.api.LoadBalancer;
+import ai.zhongmingmao.zmrpc.core.api.RegistryCenter;
 import ai.zhongmingmao.zmrpc.core.api.Router;
 import ai.zhongmingmao.zmrpc.core.api.RpcContext;
-import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import java.lang.reflect.Field;
@@ -31,13 +31,12 @@ public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAw
   Map<String, Object> stub = Maps.newHashMap();
 
   public void start() {
-    Router router = applicationContext.getBean(Router.class);
-    LoadBalancer loadBalancer = applicationContext.getBean(LoadBalancer.class);
-    RpcContext context = RpcContext.builder().router(router).loadBalancer(loadBalancer).build();
-
-    String uris = environment.getProperty("zmrpc.providers", "");
-    List<String> providers = Splitter.on(",").omitEmptyStrings().trimResults().splitToList(uris);
-    System.out.println("providers: " + providers);
+    RpcContext context =
+        RpcContext.builder()
+            .router(applicationContext.getBean(Router.class))
+            .loadBalancer(applicationContext.getBean(LoadBalancer.class))
+            .build();
+    RegistryCenter registryCenter = applicationContext.getBean(RegistryCenter.class);
 
     for (String beanDefinitionName : applicationContext.getBeanDefinitionNames()) {
       Object bean = applicationContext.getBean(beanDefinitionName);
@@ -48,7 +47,7 @@ public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAw
               Class<?> service = field.getType();
               String serviceName = field.getType().getCanonicalName();
               if (!stub.containsKey(serviceName)) {
-                Object consumer = createConsumer(service, context, providers);
+                Object consumer = createConsumer(service, context, registryCenter);
                 field.setAccessible(true);
                 field.set(bean, consumer);
                 stub.put(serviceName, consumer);
@@ -76,10 +75,12 @@ public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAw
     return fields;
   }
 
-  private Object createConsumer(Class<?> service, RpcContext context, List<String> providers) {
+  private Object createConsumer(
+      Class<?> service, RpcContext context, RegistryCenter registryCenter) {
     return Proxy.newProxyInstance(
         service.getClassLoader(),
         new Class[] {service},
-        new ZmInvocationHandler(service, context, providers));
+        new ZmInvocationHandler(
+            service, context, registryCenter.findAll(service.getCanonicalName())));
   }
 }

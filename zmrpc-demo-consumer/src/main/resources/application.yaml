@@ -4,4 +4,4 @@ spring:
 server:
   port: 8088
 zmrpc:
-  providers: http://localhost:8081,http://localhost:8082
+  providers: http://localhost:8081,http://localhost:8082,http://localhost:8083
