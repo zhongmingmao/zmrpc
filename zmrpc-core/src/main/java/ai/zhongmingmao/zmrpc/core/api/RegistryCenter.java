@@ -1,5 +1,6 @@
 package ai.zhongmingmao.zmrpc.core.api;
 
+import ai.zhongmingmao.zmrpc.core.registry.ChangeListener;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -18,7 +19,7 @@ public interface RegistryCenter {
 
   List<String> findAll(String service);
 
-  //  void subscribe();
+  void subscribe(String service, ChangeListener listener);
 
   @AllArgsConstructor
   @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -42,5 +43,8 @@ public interface RegistryCenter {
     public List<String> findAll(String service) {
       return providers;
     }
+
+    @Override
+    public void subscribe(String service, ChangeListener listener) {}
   }
 }

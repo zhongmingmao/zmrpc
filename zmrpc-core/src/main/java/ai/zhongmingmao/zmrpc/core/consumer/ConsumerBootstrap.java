@@ -5,6 +5,7 @@ import ai.zhongmingmao.zmrpc.core.api.LoadBalancer;
 import ai.zhongmingmao.zmrpc.core.api.RegistryCenter;
 import ai.zhongmingmao.zmrpc.core.api.Router;
 import ai.zhongmingmao.zmrpc.core.api.RpcContext;
+import ai.zhongmingmao.zmrpc.core.utils.InstanceUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import java.lang.reflect.Field;
@@ -77,10 +78,18 @@ public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAw
 
   private Object createConsumer(
       Class<?> service, RpcContext context, RegistryCenter registryCenter) {
+    String serviceName = service.getCanonicalName();
+    List<String> providers = registryCenter.findAll(serviceName);
+    registryCenter.subscribe(
+        serviceName,
+        event -> {
+          providers.clear();
+          providers.addAll(
+              event.getProviders().stream().map(InstanceUtils::buildProvider).toList());
+        });
     return Proxy.newProxyInstance(
         service.getClassLoader(),
         new Class[] {service},
-        new ZmInvocationHandler(
-            service, context, registryCenter.findAll(service.getCanonicalName())));
+        new ZmInvocationHandler(service, context, providers));
   }
 }

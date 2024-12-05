@@ -4,13 +4,12 @@ import ai.zhongmingmao.zmrpc.core.api.LoadBalancer;
 import ai.zhongmingmao.zmrpc.core.api.RegistryCenter;
 import ai.zhongmingmao.zmrpc.core.api.Router;
 import ai.zhongmingmao.zmrpc.core.cluster.RoundRobinLoadBalancer;
-import com.google.common.base.Splitter;
+import ai.zhongmingmao.zmrpc.core.registry.ZkRegistryCenter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.core.env.Environment;
 
 @Configuration
 public class ConsumerConfig {
@@ -40,9 +39,7 @@ public class ConsumerConfig {
   }
 
   @Bean(initMethod = "start", destroyMethod = "stop")
-  public RegistryCenter registryCenter(Environment environment) {
-    String providers = environment.getProperty("zmrpc.providers", "");
-    return new RegistryCenter.StaticRegistryCenter(
-        Splitter.on(",").trimResults().omitEmptyStrings().splitToList(providers));
+  public RegistryCenter registryCenter() {
+    return new ZkRegistryCenter();
   }
 }
