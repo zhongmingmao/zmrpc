@@ -23,6 +23,8 @@ public interface UserService {
 
   List<User> getUsers(List<User> users);
 
+  User[] getUsers(User[] users);
+
   Map<String, User> getUsers(Map<String, User> users);
 
   String getName();

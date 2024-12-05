@@ -66,6 +66,11 @@ public class ZmrpcDemoConsumerApplication {
           userService.getUsers(List.of(User.builder().id(1).name("zhongmingmao").build()));
       System.out.println("rpc result, userService.getUsers() = " + users);
 
+      User[] userArray =
+          userService.getUsers(new User[] {User.builder().id(1).name("zhongmingmao").build()});
+      System.out.println(
+          "rpc result, userService.getUsers() = " + java.util.Arrays.toString(userArray));
+
       Map<String, User> userMap =
           userService.getUsers(Map.of("1", User.builder().id(1).name("zhongmingmao").build()));
       System.out.println("rpc result, userService.getUsers() = " + userMap);
